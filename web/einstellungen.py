@@ -89,7 +89,7 @@ DATEN_ORDNER = Path(os.environ.get("DATEN_ORDNER", Path(__file__).resolve().pare
 DATENBANK_PFAD = Path(os.environ.get("DATENBANK_PFAD", DATEN_ORDNER / "web.sqlite3"))
 
 # Nur auf True setzen, wenn die Seite ausschließlich über HTTPS erreichbar ist
-COOKIES_NUR_HTTPS: bool = _bool("COOKIES_NUR_HTTPS", False)
+COOKIES_NUR_HTTPS: bool = _bool("COOKIES_NUR_HTTPS", True)
 
 # Cookie-Banner (siehe docs/VEROEFFENTLICHEN.md, Abschnitt DSGVO):
 #   "aus"          -> kein Banner. Richtig, solange NUR das technisch notwendige
