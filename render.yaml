@@ -1,0 +1,53 @@
+# Render Blueprint (https://render.com) – "New > Blueprint" und dieses Repo wählen.
+services:
+  - type: web
+    name: follower-auswertung
+    runtime: docker
+    region: frankfurt          # Server in der EU (DSGVO)
+    plan: starter              # dauerhafter Speicher (disk) braucht einen bezahlten Plan
+    healthCheckPath: /
+    disk:
+      name: daten
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ACCOUNTS_AKTIVIERT      # 1 = Konten an, 0 = aus
+        value: "0"
+      - key: AUTO_CHECK_AKTIVIERT    # auf öffentlichen Servern besser aus
+        value: "0"
+      - key: COOKIES_NUR_HTTPS
+        value: "1"
+      - key: BETREIBER_NAME
+        sync: false                  # im Render-Dashboard eintragen
+      - key: BETREIBER_ADRESSE
+        sync: false
+      - key: BETREIBER_EMAIL
+        sync: false
+      - key: HOSTER_NAME
+        value: "Render Services, Inc."
+      - key: HOSTER_SITZ
+        value: "USA, Server in Frankfurt am Main"
+      - key: AUFSICHTSBEHOERDE
+        sync: false
+      - key: COOKIE_BANNER          # aus | hinweis | einwilligung
+        value: "aus"
+      - key: KONTO_LOESCHEN_NACH_TAGEN
+        value: "365"
+      - key: OEFFENTLICHE_URL        # z. B. https://deinname.onrender.com
+        sync: false
+      - key: E_MAIL_BESTAETIGUNG
+        value: "1"
+      - key: SMTP_HOST              # leer = Testmodus (Mails nur im Log)
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_VERSCHLUESSELUNG
+        value: "starttls"
+      - key: SMTP_BENUTZER
+        sync: false
+      - key: SMTP_PASSWORT
+        sync: false
+      - key: SMTP_ABSENDER
+        sync: false

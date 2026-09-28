@@ -1,0 +1,4 @@
+# Wichtig für Windows: "kivy[base]" statt nur "kivy" installieren, das
+# zieht die passenden vorkompilierten Abhängigkeiten (SDL2, GLEW, ANGLE)
+# automatisch mit.
+kivy[base]==2.3.1

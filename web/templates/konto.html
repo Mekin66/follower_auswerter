@@ -1,0 +1,66 @@
+{% extends "basis.html" %}
+{% block titel %}Mein Konto{% endblock %}
+{% block inhalt %}
+    <h1>Mein Konto</h1>
+    <div class="karte">
+        <p><b>{{ konto.benutzername }}</b> · erstellt am {{ konto.erstellt_am[:10] }} · {{ anzahl_snapshots }} gespeicherte Auswertung(en)</p>
+        <a class="knopf knopf-dezent" href="{{ url_for('konto_export') }}">⬇ Alle meine Daten herunterladen (JSON)</a>
+    </div>
+
+    <div class="karte">
+        <h2>E-Mail-Adresse</h2>
+        {% if konto.email %}
+            <p><b>{{ konto.email }}</b>
+               {% if konto.email_bestaetigt_am %}<span class="badge badge-gruen">bestätigt</span>
+               {% else %}<span class="badge badge-rot">nicht bestätigt</span>{% endif %}</p>
+        {% else %}
+            <p class="hinweis">Noch keine E-Mail-Adresse hinterlegt. Ohne Adresse kannst du ein vergessenes Passwort nicht zurücksetzen.</p>
+        {% endif %}
+        {% if konto.email_neu %}
+            <p class="hinweis">Neue Adresse <b>{{ konto.email_neu }}</b> wartet auf Bestätigung.</p>
+        {% endif %}
+        {% if konto.email_neu or (konto.email and not konto.email_bestaetigt_am) %}
+            <form method="post" action="{{ url_for('konto') }}" style="margin-bottom:12px">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <input type="hidden" name="aktion" value="email_erneut">
+                <button type="submit" class="knopf-dezent">Bestätigungs-Link erneut senden</button>
+            </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('konto') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="aktion" value="email">
+            <label>{{ 'Neue' if konto.email else 'Deine' }} E-Mail-Adresse <input type="email" name="email" autocomplete="email" required maxlength="254"></label>
+            <label>Passwort zur Bestätigung <input type="password" name="passwort" autocomplete="current-password" required></label>
+            <button type="submit">{{ 'Adresse ändern' if konto.email else 'Adresse hinterlegen' }}</button>
+        </form>
+    </div>
+
+    {% if cfg.NEWSLETTER_ABFRAGEN or konto.newsletter_am %}
+    <form class="karte" action="{{ url_for('konto') }}" method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="aktion" value="newsletter">
+        <h2>Neuigkeiten per E-Mail</h2>
+        <label class="checkzeile"><input type="checkbox" name="newsletter" value="1" {% if konto.newsletter_am %}checked{% endif %}>
+            <span>Ich möchte gelegentlich Neuigkeiten zur App bekommen.{% if konto.newsletter_am %} (eingewilligt am {{ konto.newsletter_am[:10] }}){% endif %}</span></label>
+        <button type="submit" class="knopf-dezent">Speichern</button>
+    </form>
+    {% endif %}
+
+    <form class="karte" action="{{ url_for('konto') }}" method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="aktion" value="passwort">
+        <h2>Passwort ändern</h2>
+        <label>Aktuelles Passwort <input type="password" name="alt" autocomplete="current-password" required></label>
+        <label>Neues Passwort <input type="password" name="neu" autocomplete="new-password" required></label>
+        <label>Neues Passwort wiederholen <input type="password" name="neu2" autocomplete="new-password" required></label>
+        <button type="submit">Passwort ändern</button>
+    </form>
+
+    <form class="karte gefahrzone" action="{{ url_for('konto_loeschen') }}" method="post" onsubmit="return confirm('Konto und alle Daten endgültig löschen?')">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <h2>Konto löschen</h2>
+        <p class="hinweis" style="margin-top:-6px">Löscht dein Konto und alle Auswertungen, Markierungen und Listen endgültig.</p>
+        <label>Passwort zur Bestätigung <input type="password" name="passwort" autocomplete="current-password" required></label>
+        <button type="submit" class="knopf-rot">Konto endgültig löschen</button>
+    </form>
+{% endblock %}

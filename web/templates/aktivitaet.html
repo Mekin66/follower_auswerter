@@ -1,0 +1,110 @@
+{% extends "basis.html" %}
+{% set ist_kommentar = art == 'kommentar' %}
+{% block titel %}{{ 'Kommentar-Modus' if ist_kommentar else 'Like-Modus' }}{% endblock %}
+{% block inhalt %}
+    {% macro csrf() %}<input type="hidden" name="_csrf" value="{{ csrf_token() }}">{% endmacro %}
+    <h1>{{ '💬 Kommentar-Modus' if ist_kommentar else '❤️ Like-Modus' }}
+        <a class="hilfe-link" href="{{ url_for('anleitung', id='kommentare-likes') }}">So funktioniert's</a></h1>
+
+    {% if modus == "start" %}
+        {% if not anzahl %}
+            <div class="karte">
+                <p>Noch keine {{ 'Kommentare' if ist_kommentar else 'Likes' }} importiert.</p>
+                <p class="hinweis" style="margin:0 0 12px">Fordere bei Instagram einen Export an, der „{{ 'Kommentare' if ist_kommentar else 'Likes' }}“ enthält,
+                    und lade ihn auf der Startseite hoch – das Programm erkennt ihn automatisch (JSON oder HTML).</p>
+                <a class="knopf" href="{{ url_for('start') }}">Zur Startseite</a>
+            </div>
+        {% else %}
+            {% if ist_kommentar %}
+            <div class="kacheln">
+                <div class="kachel"><div class="wert rot">{{ statistik['kritisch'] }}</div><div class="titel">kritisch – Löschen empfohlen</div></div>
+                <div class="kachel"><div class="wert" style="color:var(--gelb-dunkel)">{{ statistik['prüfen'] }}</div><div class="titel">prüfen</div></div>
+                <div class="kachel"><div class="wert gruen">{{ statistik['harmlos'] }}</div><div class="titel">harmlos</div></div>
+                <div class="kachel"><div class="wert">{{ entschieden }}</div><div class="titel">schon entschieden</div></div>
+            </div>
+            {% endif %}
+            <form class="karte" action="{{ url_for('aktivitaet_start', name=name) }}" method="post">
+                {{ csrf() }}
+                {% if ist_kommentar %}
+                    <h2>{{ anzahl }} eigene Kommentare durchgehen</h2>
+                    <p class="hinweis" style="margin-top:-6px">Die Einstufung beruht auf Wortlisten (Beleidigungen, Politik, Gewalt …), Länge und Schreibstil –
+                        keine KI. Emojis und kurze Kommentare gelten als harmlos, lange Texte werden immer angezeigt. Du entscheidest selbst.</p>
+                    <label class="checkzeile"><input type="radio" name="filter" value="kritisch"><span>Nur kritische (Löschen empfohlen)</span></label>
+                    <label class="checkzeile"><input type="radio" name="filter" value="riskant" checked><span>Kritische + zu prüfende <small>empfohlen – heikelste zuerst</small></span></label>
+                    <label class="checkzeile"><input type="radio" name="filter" value="alle"><span>Alle Kommentare nacheinander</span></label>
+                {% else %}
+                    <h2>{{ anzahl }} Likes – wem du am meisten Likes gibst</h2>
+                    <div style="max-height:320px; overflow:auto; margin-bottom:14px">
+                        <table style="width:100%; border-collapse:collapse; font-size:.92rem">
+                            <tr style="text-align:left; color:var(--text-schwach)"><th style="padding:6px 4px">Account</th><th>Likes</th><th>letzter Like</th><th></th></tr>
+                            {% for konto, n, letzter in top %}
+                                <tr style="border-top:1px solid var(--rand)">
+                                    <td style="padding:6px 4px"><a href="{{ profil_url(konto) }}" target="_blank" rel="noopener">{{ konto }}</a></td>
+                                    <td><b>{{ n }}</b></td><td>{{ letzter }}</td>
+                                    <td><button type="submit" name="account" value="{{ konto }}" class="knopf-dezent klein">nur diese durchgehen</button></td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                {% endif %}
+                <label class="checkzeile"><input type="checkbox" name="erneut" value="1"><span>Schon entschiedene erneut zeigen</span></label>
+                <button type="submit">{{ 'Start' if ist_kommentar else 'Alle Likes durchgehen' }}</button>
+                {% if laufend %}<a class="knopf knopf-dezent" href="{{ url_for('aktivitaet_durchgang', name=name) }}">Laufenden Durchgang fortsetzen</a>{% endif %}
+                <a class="knopf knopf-dezent" href="{{ url_for('aktivitaet_liste', name=name) }}">Liste „Zum Entfernen“ ({{ zu_entfernen }})</a>
+            </form>
+            <form action="{{ url_for('aktivitaet_leeren', name=name) }}" method="post" onsubmit="return confirm('Alle importierten Daten und Entscheidungen hier löschen?')">
+                {{ csrf() }}<button type="submit" class="knopf-dezent klein">Importierte {{ 'Kommentare' if ist_kommentar else 'Likes' }} löschen</button>
+            </form>
+        {% endif %}
+
+    {% elif modus == "durchgang" %}
+        <div class="karte">
+            <p class="wizard-fortschritt">{{ erledigt }} von {{ gesamt }} bearbeitet</p>
+            <div class="wizard-fortschrittsbalken"><div style="width: {{ (erledigt / gesamt * 100)|round(1) }}%"></div></div>
+            {% if ist_kommentar %}
+                <p style="margin:0 0 6px">
+                    <span class="badge {{ {'kritisch':'badge-rot','prüfen':'badge-gelb','harmlos':'badge-gruen'}[bewertung.stufe] }}">{{ bewertung.stufe }} · {{ bewertung.empfehlung }}</span>
+                    <span class="hinweis" style="margin:0">&nbsp;{{ eintrag.datum }} · {{ eintrag.quelle }} von @{{ eintrag.medien_owner or '?' }}</span>
+                </p>
+                <p class="hinweis" style="margin:0 0 10px">Warum: {{ bewertung.gruende|join('; ') }}</p>
+                <blockquote class="kommentar-text">{{ eintrag.text }}</blockquote>
+            {% else %}
+                <div class="wizard-name" style="text-align:center">@{{ eintrag.owner or '?' }}</div>
+                <p class="wizard-seit" style="text-align:center">{{ eintrag.art }} geliked am {{ eintrag.datum }}</p>
+            {% endif %}
+            <p style="margin:10px 0">
+                {% if such_link(eintrag) %}<a class="hilfe-link" href="{{ such_link(eintrag) }}" target="_blank" rel="noopener">🔗 {{ such_link(eintrag) }}</a>{% endif %}
+                · <a class="hilfe-link" href="{{ aktivitaet_url[art] }}" target="_blank" rel="noopener">Instagram-Aktivitätsseite</a>
+                {% if ist_kommentar %}· <button type="button" class="knopf-dezent klein" onclick="navigator.clipboard.writeText(document.querySelector('.kommentar-text').innerText)">Text kopieren</button>{% endif %}
+            </p>
+            <form action="{{ url_for('aktivitaet_entscheiden', name=name) }}" method="post" style="text-align:center">
+                {{ csrf() }}<input type="hidden" name="id" value="{{ eintrag.id }}">
+                <button type="submit" name="entscheidung" value="entfernen" class="knopf-rot">{{ '🗑 Löschen' if ist_kommentar else '💔 Like entfernen' }}</button>
+                <button type="submit" name="entscheidung" value="behalten" class="knopf-gruen">✓ Behalten</button>
+                {% if kann_zurueck %}<br><button type="submit" name="zurueck" value="1" class="knopf-dezent">&larr; Zurück</button>{% endif %}
+                <a class="knopf knopf-dezent" href="{{ url_for('aktivitaet_liste', name=name) }}">Beenden</a>
+            </form>
+        </div>
+
+    {% elif modus == "liste" %}
+        <div class="karte">
+            <h2>{{ eintraege|length }} zum Entfernen markiert</h2>
+            <p class="hinweis" style="margin-top:-6px">Das Programm löscht nichts selbst. Öffne die Einträge über die Links oder gesammelt auf der
+                <a href="{{ aktivitaet_url[art] }}" target="_blank" rel="noopener">Instagram-Aktivitätsseite</a>
+                (App: Profil → Menü → Deine Aktivität → Interaktionen) – dort kannst du nach Datum filtern und mehrere auf einmal löschen.</p>
+            <ul class="liste">
+                {% for e in eintraege %}
+                    <li data-name="{{ e.id }}">
+                        <span><b>{{ e.datum }}</b> · {{ ('bei @' ~ (e.medien_owner or '?')) if ist_kommentar else (e.art ~ ' von @' ~ (e.owner or '?')) }}
+                            {% if ist_kommentar %}<br><span class="hinweis" style="margin:0">„{{ e.text[:160] }}{{ '…' if e.text|length > 160 }}“</span>{% endif %}</span>
+                        <span class="rechts">{% if such_link(e) %}<a class="knopf knopf-dezent klein" href="{{ such_link(e) }}" target="_blank" rel="noopener">Öffnen</a>{% endif %}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <p style="margin-top:14px">
+                <a class="knopf" href="{{ url_for('aktivitaet_export', name=name) }}">⬇ Als Textdatei</a>
+                <a class="knopf knopf-dezent" href="{{ url_for('aktivitaet', name=name) }}">Zur Übersicht</a>
+            </p>
+        </div>
+    {% endif %}
+{% endblock %}

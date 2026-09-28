@@ -1,0 +1,55 @@
+{% extends "basis.html" %}
+{% block titel %}Verlauf{% endblock %}
+{% block inhalt %}
+    <h1>Verlauf <a class="hilfe-link" href="{{ url_for('anleitung', id='verlauf') }}">Hilfe</a></h1>
+    {% if not volle_funktionen %}
+        <p class="hinweis">Ohne Konto siehst du hier nur die Auswertungen dieser Browser-Sitzung (max. {{ aufbewahrung_stunden|int }} Stunden).</p>
+    {% endif %}
+
+    {% if not snapshots %}
+        <div class="karte">
+            <p>Noch keine gespeicherten Auswertungen vorhanden.</p>
+            <a class="knopf" href="{{ url_for('start') }}">Jetzt Daten laden</a>
+        </div>
+    {% else %}
+        {% if snapshots|length > 1 %}
+        <form action="{{ url_for('verlauf_vergleichen') }}" method="post" class="karte">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <h2>Zwei Zeitpunkte vergleichen</h2>
+            <label>Älterer Zeitpunkt
+                <select name="id_alt">
+                    {% for id, erstellt_am, label in snapshots %}
+                        <option value="{{ id }}" {{ "selected" if loop.index == 2 else "" }}>{{ label }} ({{ erstellt_am.replace('T', ' ') }})</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Neuerer Zeitpunkt
+                <select name="id_neu">
+                    {% for id, erstellt_am, label in snapshots %}
+                        <option value="{{ id }}" {{ "selected" if loop.first else "" }}>{{ label }} ({{ erstellt_am.replace('T', ' ') }})</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="submit">Vergleichen</button>
+        </form>
+        {% endif %}
+
+        <div class="karte">
+            <h2>Alle Auswertungen</h2>
+            <ul class="liste">
+                {% for id, erstellt_am, label in snapshots %}
+                    <li data-initiale="{{ loop.revindex }}">
+                        <span><a href="{{ url_for('ergebnis', snapshot_id=id) }}">{{ label }}</a>
+                        <span class="hinweis" style="margin:0">({{ erstellt_am.replace('T', ' ') }})</span></span>
+                        <span class="rechts">
+                            <form action="{{ url_for('snapshot_loeschen', snapshot_id=id) }}" method="post" onsubmit="return confirm('Diese Auswertung löschen?')">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                <button type="submit" class="knopf-dezent klein">Löschen</button>
+                            </form>
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+{% endblock %}

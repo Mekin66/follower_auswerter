@@ -1,0 +1,20 @@
+# Eigener Server (z. B. Hetzner-VPS in Deutschland) mit automatischem HTTPS via Caddy.
+# Auf dem Server im Projektordner:  docker compose -f packaging/server/docker-compose.yml up -d --build
+services:
+  app:
+    build: ../..
+    restart: unless-stopped
+    volumes:
+      - daten:/data
+    env_file: .env          # Vorlage: packaging/server/.env.beispiel
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_daten:/data
+    depends_on: [app]
+volumes:
+  daten:
+  caddy_daten:

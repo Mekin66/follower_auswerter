@@ -1,0 +1,57 @@
+{% extends "basis.html" %}
+{% block titel %}Listen-Editor{% endblock %}
+{% block inhalt %}
+    <h1>✏️ Listen-Editor ({{ plattform_name }})</h1>
+    <p class="hinweis">Ein Name pro Zeile. Erlaubt sind auch @namen, Profil-Links und „name;TT.MM.JJJJ“. Zeilen mit # sind Kommentare.
+        <a class="hilfe-link" href="{{ url_for('anleitung', id='editor') }}">Anleitung</a></p>
+
+    <form class="karte" method="post" action="{{ url_for('editor') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        {% if letzter %}
+            <p style="margin-top:0"><a class="knopf knopf-dezent klein" href="{{ url_for('editor', von=letzter) }}">Aus letzter Auswertung übernehmen</a></p>
+        {% endif %}
+        <div class="editor-spalten">
+            {% for feld, titel, text in [('follower', 'Follower – wer mir folgt', follower_text), ('following', 'Following – wem ich folge', following_text)] %}
+            <div>
+                <div class="editor-kopf">
+                    <label for="{{ feld }}"><b>{{ titel }}</b> <span class="hinweis" data-zaehler-fuer="{{ feld }}" style="margin:0">0 Namen</span></label>
+                    <span>
+                        <span class="knopf knopf-dezent klein datei-knopf">📂 TXT laden<input type="file" accept=".txt,.csv,text/plain" data-laden-in="{{ feld }}" aria-label="TXT-Datei in {{ titel }} laden"></span>
+                        <button type="submit" name="aktion" value="txt_{{ feld }}" class="knopf-dezent klein">💾 Als TXT speichern</button>
+                    </span>
+                </div>
+                <textarea id="{{ feld }}" name="{{ feld }}" spellcheck="false" placeholder="anna&#10;@ben.m&#10;carl;14.11.2023">{{ text }}</textarea>
+            </div>
+            {% endfor %}
+        </div>
+        <label style="margin-top:16px">Name der Auswertung (optional)
+            <input type="text" name="label" maxlength="80" placeholder="z. B. Stand Januar">
+        </label>
+        <button type="submit" name="aktion" value="auswerten">Auswerten &amp; speichern</button>
+    </form>
+
+    <script>
+    // Namen zählen (grob: nicht-leere Zeilen ohne #) und TXT-Dateien direkt im Browser einlesen.
+    function zaehlen(feld) {
+        var n = document.getElementById(feld).value.split(/\n/).filter(function (z) { z = z.trim(); return z && z[0] !== '#'; }).length;
+        document.querySelector('[data-zaehler-fuer=' + feld + ']').textContent = n + ' Zeilen';
+    }
+    ['follower', 'following'].forEach(function (feld) {
+        document.getElementById(feld).addEventListener('input', function () { zaehlen(feld); });
+        zaehlen(feld);
+    });
+    document.querySelectorAll('[data-laden-in]').forEach(function (eingabe) {
+        eingabe.addEventListener('change', function () {
+            var datei = eingabe.files[0]; if (!datei) return;
+            var leser = new FileReader();
+            leser.onload = function () {
+                var feld = document.getElementById(eingabe.dataset.ladenIn);
+                feld.value = (feld.value.trim() ? feld.value.trim() + '\n' : '') + leser.result;
+                zaehlen(eingabe.dataset.ladenIn);
+            };
+            leser.readAsText(datei);
+            eingabe.value = '';
+        });
+    });
+    </script>
+{% endblock %}

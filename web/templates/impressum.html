@@ -1,0 +1,16 @@
+{% extends "basis.html" %}
+{% block titel %}Impressum{% endblock %}
+{% block inhalt %}
+    <h1>Impressum</h1>
+    <div class="karte">
+        {% if not cfg.BETREIBER_NAME %}
+            <p class="rot">⚠ Noch nicht ausgefüllt: Setze BETREIBER_NAME, BETREIBER_ADRESSE und BETREIBER_EMAIL
+                (Umgebungsvariablen oder web/einstellungen.py), bevor die Seite öffentlich erreichbar ist.</p>
+        {% endif %}
+        <p><b>Angaben gemäß § 5 DDG</b></p>
+        <p>{{ cfg.BETREIBER_NAME or '[Vor- und Nachname]' }}<br>
+           {{ cfg.BETREIBER_ADRESSE or '[Straße Hausnummer, PLZ Ort]' }}</p>
+        <p><b>Kontakt</b><br>E-Mail: {{ cfg.BETREIBER_EMAIL or '[E-Mail-Adresse]' }}</p>
+        <p class="hinweis">Diese Seite ist kein offizielles Angebot von Instagram (Meta Platforms, Inc.) oder TikTok (ByteDance Ltd.) und steht mit diesen in keiner Verbindung.</p>
+    </div>
+{% endblock %}

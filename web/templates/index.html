@@ -1,0 +1,54 @@
+{% extends "basis.html" %}
+{% block titel %}Daten laden{% endblock %}
+{% block inhalt %}
+    <h1>Wer folgt dir auf {{ plattform_name }} nicht zurück?</h1>
+    <p class="hinweis">Lade deinen {{ plattform_name }}-Datenexport hoch – kein Login, keine Passwörter.
+        Neu hier? <a class="hilfe-link" href="{{ url_for('anleitung', id=plattform.value ~ '-export') }}">So bekommst du die Datei (2 Minuten)</a></p>
+
+    {% if accounts_aktiviert and not volle_funktionen %}
+        <div class="info">
+            Du nutzt die Seite ohne Konto: Deine Daten werden nach {{ aufbewahrung_stunden|int }} Stunden automatisch gelöscht.
+            {% if registrierung_offen %}<a href="{{ url_for('registrieren') }}">Mit einem Konto</a>{% else %}Mit einem Konto{% endif %}
+            merkt sich die Seite deine Entscheidungen dauerhaft, du wählst beim nächsten Export aus, welche Gruppen erneut
+            abgefragt werden, und kannst Blockiert- und Freunde-Listen führen.
+        </div>
+    {% elif not accounts_aktiviert %}
+        <div class="info">Deine hochgeladenen Daten werden nach {{ aufbewahrung_stunden|int }} Stunden automatisch gelöscht.</div>
+    {% endif %}
+
+    <section class="karte">
+        <h2>📦 Export-Datei hochladen</h2>
+        <p class="hinweis" style="margin-top:-6px">Die ZIP-Datei von Instagram oder TikTok – nicht entpacken. Das Programm erkennt automatisch,
+            was drin ist: Follower/Following, Kommentare, Likes (JSON oder HTML). Einzelne Dateien daraus gehen auch.</p>
+        <form action="{{ url_for('laden') }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <label>Export-Datei (.zip, .json oder .html)
+                <input type="file" name="zip_datei" accept=".zip,.json,.html" required>
+            </label>
+            <button type="submit">Laden &amp; auswerten</button>
+        </form>
+    </section>
+
+    <section class="karte">
+        <h2>📄 Einzelne Follower-Listen hochladen (JSON, HTML oder TXT)</h2>
+        <p class="hinweis" style="margin-top:-6px">Für einzelne Dateien aus dem Export – oder selbst erstellte Textdateien mit einem Namen pro Zeile.
+            <a class="hilfe-link" href="{{ url_for('anleitung', id='editor') }}">Wie sieht so eine TXT-Datei aus?</a></p>
+        <form action="{{ url_for('laden') }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <label>Follower – wer dir folgt (.json, .html oder .txt)
+                <input type="file" name="follower_datei" accept=".json,.html,.txt">
+            </label>
+            <label>Following – wem du folgst (.json, .html oder .txt)
+                <input type="file" name="following_datei" accept=".json,.html,.txt">
+            </label>
+            <button type="submit">Laden &amp; auswerten</button>
+        </form>
+    </section>
+
+    <section class="karte">
+        <h2>✏️ Kein Export? Listen selbst eintippen</h2>
+        <p class="hinweis" style="margin-top:-6px">Im Listen-Editor schreibst du die Namen einfach untereinander, lädst Textdateien und speicherst sie wieder.</p>
+        <a class="knopf knopf-gruen" href="{{ url_for('editor') }}">Zum Listen-Editor</a>
+        <a class="knopf knopf-dezent" href="{{ url_for('anleitung') }}">Alle Anleitungen</a>
+    </section>
+{% endblock %}

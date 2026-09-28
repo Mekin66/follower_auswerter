@@ -1,0 +1,44 @@
+{% extends "basis.html" %}
+{% block titel %}Ergebnis{% endblock %}
+{% block inhalt %}
+    <h1>{{ snapshot.label }} <a class="hilfe-link" href="{{ url_for('anleitung', id='ergebnis') }}">Hilfe</a></h1>
+
+    <div class="kacheln">
+        <div class="kachel"><div class="wert">{{ following_liste|length }}</div><div class="titel">Ich folge</div></div>
+        <div class="kachel"><div class="wert">{{ follower_liste|length }}</div><div class="titel">Folgen mir</div></div>
+        <div class="kachel"><div class="wert">{{ gegenseitig }}</div><div class="titel">Freunde (gegenseitig)</div></div>
+        <div class="kachel"><div class="wert rot">{{ nicht_zurueck }}</div><div class="titel">Folgen nicht zurück</div></div>
+    </div>
+
+    <p>
+        <a class="knopf knopf-gelb" href="{{ url_for('entfolgen', snapshot_id=snapshot.id) }}">🧹 Entfolgen-Modus</a>
+        <a class="knopf knopf-gruen" href="{{ url_for('freunde', snapshot_id=snapshot.id) }}">👥 Freunde-Liste</a>
+        <a class="knopf knopf-dezent" href="{{ url_for('editor', von=snapshot.id) }}">✏️ Im Editor bearbeiten</a>
+        <a class="knopf knopf-dezent" href="{{ url_for('verlauf') }}">Zum Verlauf</a>
+    </p>
+    <p class="hinweis" style="margin-top:0">Rot markiert = kein gegenseitiges Folgen</p>
+
+    <div class="zwei_spalten">
+        <div>
+            <h2>Ich folge ({{ following_liste|length }})</h2>
+            <ul class="liste">
+                {% for e in following_liste %}
+                    <li data-initiale="{{ e.username[0] }}" class="{{ 'rot' if not e.folgt_zurueck else '' }}">
+                        <span>{{ e.username }} <span class="hinweis" style="margin:0">(seit {{ e.seit }})</span></span>
+                        {% if e.markierung %}<span class="rechts"><span class="badge {{ {'behalten':'badge-gruen','entfernt':'badge-rot','deaktiviert':'badge-gelb'}[e.markierung.value] }}">{{ e.markierung.value }}</span></span>{% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            <h2>Folgen mir ({{ follower_liste|length }})</h2>
+            <ul class="liste">
+                {% for e in follower_liste %}
+                    <li data-initiale="{{ e.username[0] }}" class="{{ 'rot' if not e.wird_zurueckgefolgt else '' }}">
+                        {{ e.username }} <span class="hinweis" style="margin:0">(seit {{ e.seit }})</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}

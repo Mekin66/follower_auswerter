@@ -1,0 +1,27 @@
+{% extends "basis.html" %}
+{% block titel %}{{ gewaehlt.titel if gewaehlt else 'Anleitungen' }}{% endblock %}
+{% block inhalt %}
+    {% if gewaehlt %}
+        <p style="margin:0 0 8px"><a class="hilfe-link" href="{{ url_for('anleitung') }}">← Alle Anleitungen</a></p>
+        <h1>{{ gewaehlt.titel }}</h1>
+        <p class="hinweis" style="margin-top:-10px">{{ gewaehlt.kurz }}</p>
+        <div class="karte">
+            <ol class="schritte">{% for schritt in gewaehlt.schritte %}<li>{{ schritt }}</li>{% endfor %}</ol>
+            {% if gewaehlt.tipps %}
+                <ul class="tipps">{% for tipp in gewaehlt.tipps %}<li>💡 {{ tipp }}</li>{% endfor %}</ul>
+            {% endif %}
+        </div>
+        <p><a class="knopf" href="{{ url_for('start') }}">Los geht's</a></p>
+    {% else %}
+        <h1>❓ Anleitungen</h1>
+        <p class="hinweis">Alles Schritt für Schritt – ohne Vorwissen.</p>
+        {% for kategorie, liste in gruppen.items() %}
+            <h3>{{ kategorie }}</h3>
+            <div class="anleitungs-kacheln">
+                {% for a in liste %}
+                    <a href="{{ url_for('anleitung', id=a.id) }}"><b>{{ a.titel }}</b><span class="hinweis" style="margin:0">{{ a.kurz }}</span></a>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

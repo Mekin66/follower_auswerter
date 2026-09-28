@@ -1,0 +1,147 @@
+{% extends "basis.html" %}
+{% block titel %}Entfolgen-Modus{% endblock %}
+{% block kopf %}{% if modus == "pruefung" %}<meta http-equiv="refresh" content="2">{% endif %}{% endblock %}
+{% block inhalt %}
+    <h1>🧹 Entfolgen-Modus <a class="hilfe-link" href="{{ url_for('anleitung', id='entfolgen') }}">So funktioniert's</a></h1>
+
+    {% macro csrf() %}<input type="hidden" name="_csrf" value="{{ csrf_token() }}">{% endmacro %}
+
+    {% if modus == "auswahl" %}
+        <form class="karte" action="{{ url_for('entfolgen_start', snapshot_id=snapshot_id) }}" method="post">
+            {{ csrf() }}
+            <h2>Welche Gruppen sollen erneut abgefragt werden?</h2>
+            <p class="hinweis" style="margin-top:-6px">
+                {{ uebersicht.alle|length }} Accounts folgen dir nicht zurück. {{ uebersicht.neu|length }} davon sind neu
+                und werden immer abgefragt. Bei den bereits markierten Gruppen entscheidest du hier, ob sie
+                erneut abgefragt (und automatisch geprüft) werden sollen. Nicht angehakte Gruppen werden übersprungen.
+            </p>
+            {% for schluessel, text in kategorien %}
+                {% set n = uebersicht.anzahl(schluessel) %}
+                <label class="checkzeile" {% if not n %}style="opacity:.5"{% endif %}>
+                    <input type="checkbox" name="erneut" value="{{ schluessel }}" {% if not n %}disabled{% endif %}>
+                    <span>Erneut abfragen: {{ text }}
+                        {% if n %}<small>{{ uebersicht.gruppen[schluessel][:6]|join(', ') }}{% if n > 6 %} …{% endif %}</small>{% endif %}
+                    </span>
+                    <span class="anzahl">{{ n }}</span>
+                </label>
+            {% endfor %}
+            <button type="submit">Weiter</button>
+        </form>
+
+    {% elif modus == "leer" %}
+        <div class="karte">
+            {% if ablauf.uebersicht.alle %}
+                <p>Keine offenen Accounts – alle, die dir nicht zurückfolgen, sind bereits markiert und wurden übersprungen. 🎉</p>
+                {% for schluessel, namen in ablauf.uebersprungen.items() %}
+                    <p class="hinweis" style="margin:0">Übersprungen – {{ kategorien[schluessel] }}: <b>{{ namen|length }}</b></p>
+                {% endfor %}
+                <form action="{{ url_for('entfolgen_neu', snapshot_id=snapshot_id) }}" method="post" style="margin-top:16px">
+                    {{ csrf() }}<button type="submit" class="knopf-dezent">Auswahl ändern</button>
+                </form>
+            {% else %}
+                <p>Niemand folgt dir aktuell nicht zurück. 🎉</p>
+            {% endif %}
+        </div>
+
+    {% elif modus == "angebot" %}
+        <div class="karte">
+            <h2>🔍 Automatische Vorprüfung</h2>
+            <p class="hinweis" style="margin:0 0 20px">
+                {{ anzahl_offen }} Accounts sind offen. Ich kann {% if anzahl_pruefen < anzahl_offen %}die ersten {{ anzahl_pruefen }}{% else %}sie{% endif %}
+                vorab prüfen, ob sie gelöscht oder deaktiviert wirken (öffentliche Profilseite, kein Login). Dauer ca.
+                {{ (geschaetzte_sekunden / 60)|round(0, 'ceil')|int }} Minute(n). Vorher testet das Programm, ob {{ plattform_name }} gerade
+                eine zuverlässige Prüfung zulässt – sonst bricht es mit einer Meldung ab. Du bestätigst alle Vorschläge selbst.
+            </p>
+            <form action="{{ url_for('entfolgen_automatisch', snapshot_id=snapshot_id) }}" method="post" style="display:inline">
+                {{ csrf() }}<button type="submit">Automatisch prüfen</button>
+            </form>
+            <form action="{{ url_for('entfolgen_ueberspringen', snapshot_id=snapshot_id) }}" method="post" style="display:inline">
+                {{ csrf() }}<button type="submit" class="knopf-dezent">Überspringen (nur manuell)</button>
+            </form>
+        </div>
+
+    {% elif modus == "vorschlaege" %}
+        <form class="karte" action="{{ url_for('entfolgen_vorschlaege', snapshot_id=snapshot_id) }}" method="post">
+            {{ csrf() }}
+            <h2>🔎 {{ vorschlaege|length }} Account(s) scheinen nicht mehr zu existieren</h2>
+            <p class="hinweis" style="margin-top:-6px">Bitte kurz prüfen (Namen antippen öffnet das Profil). Nur angehakte Accounts werden als
+                „Scheint deaktiviert“ übernommen – alle anderen fragt das Programm gleich normal ab.</p>
+            <ul class="liste">
+                {% for name, grund in vorschlaege.items() %}
+                    <li data-name="{{ name }}">
+                        <input type="checkbox" name="auswahl" value="{{ name }}" checked aria-label="{{ name }} übernehmen">
+                        <span><a href="{{ profil_url(name) }}" target="_blank" rel="noopener">{{ name }}</a>
+                        <span class="hinweis" style="margin:0">· {{ grund }}</span></span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <p style="margin-top:14px"><button type="submit">Angehakte übernehmen</button></p>
+        </form>
+
+    {% elif modus == "pruefung" %}
+        <div class="karte">
+            <h2>⏳ Prüfe Accounts …</h2>
+            <div class="wizard-fortschrittsbalken"><div style="width: {{ ((job.erledigt / job.gesamt * 100) if job.gesamt else 100)|round(1) }}%"></div></div>
+            <p>{{ job.erledigt }} von {{ job.gesamt }} geprüft · {{ job.erkannt }} als deaktiviert erkannt</p>
+            <p class="hinweis">Zuletzt: {{ job.letzter or '–' }} · Die Seite aktualisiert sich automatisch. Du kannst sie auch schließen und später wiederkommen.</p>
+            <form action="{{ url_for('entfolgen_abbrechen', snapshot_id=snapshot_id) }}" method="post">
+                {{ csrf() }}<button type="submit" class="knopf-dezent">Prüfung abbrechen</button>
+            </form>
+        </div>
+
+    {% elif modus == "wizard" %}
+        <div class="karte wizard-karte">
+            <p class="wizard-fortschritt">{{ entschieden }} von {{ gesamt }} bearbeitet</p>
+            <div class="wizard-fortschrittsbalken"><div style="width: {{ (entschieden / gesamt * 100)|round(1) }}%"></div></div>
+            <div class="wizard-name"><a href="{{ profil_url(kandidat) }}" target="_blank" rel="noopener" style="color:inherit">{{ kandidat }}</a></div>
+            <p class="wizard-seit">Du folgst seit {{ seit }}
+                {% if bisher %}<br><span class="badge badge-blau">bisher: {{ texte[bisher] }}</span>{% endif %}
+            </p>
+
+            <form action="{{ url_for('entfolgen_entscheiden', snapshot_id=snapshot_id) }}" method="post">
+                {{ csrf() }}
+                <input type="hidden" name="kandidat" value="{{ kandidat }}">
+                <button type="submit" name="entscheidung" value="behalten" class="knopf-gruen">✓ Behalten</button>
+                <button type="submit" name="entscheidung" value="entfernt" class="knopf-rot">✗ Entfolgen</button>
+                <button type="submit" name="entscheidung" value="deaktiviert" class="knopf-gelb">? Scheint deaktiviert</button>
+            </form>
+
+            {% if ablauf.kann_zurueck() %}
+            <form action="{{ url_for('entfolgen_zurueck', snapshot_id=snapshot_id) }}" method="post">
+                {{ csrf() }}<button type="submit" class="knopf-dezent">&larr; Zurück (letzte Entscheidung korrigieren)</button>
+            </form>
+            {% endif %}
+        </div>
+        {% if ablauf.uebersprungen %}
+            <p class="hinweis">Übersprungen:
+                {% for schluessel, namen in ablauf.uebersprungen.items() %}{{ kategorien[schluessel] }} ({{ namen|length }}){% if not loop.last %} · {% endif %}{% endfor %}
+            </p>
+        {% endif %}
+
+    {% elif modus == "fertig" %}
+        <div class="karte">
+            <h2>✅ Fertig! Zusammenfassung</h2>
+            {% for schluessel in ["entfernt", "behalten", "deaktiviert"] %}
+                {% set namen = zusammenfassung[schluessel] %}
+                <h3>{{ texte[schluessel] }} ({{ namen|length }})</h3>
+                <ul class="liste">
+                    {% for name in namen %}<li data-initiale="{{ name[0] }}"><a href="{{ profil_url(name) }}" target="_blank" rel="noopener">{{ name }}</a>
+                        {% if name in ablauf.automatisch_erkannt %}<span class="rechts"><span class="badge">automatisch erkannt, bestätigt</span></span>{% endif %}</li>{% endfor %}
+                </ul>
+            {% endfor %}
+            {% if ablauf.noch_zu_entfolgen() %}
+                <h3>⚠ Früher als „Entfolgen“ markiert – du folgst aber noch ({{ ablauf.noch_zu_entfolgen()|length }})</h3>
+                <ul class="liste">
+                    {% for name in ablauf.noch_zu_entfolgen() %}<li data-initiale="{{ name[0] }}"><a href="{{ profil_url(name) }}" target="_blank" rel="noopener">{{ name }}</a></li>{% endfor %}
+                </ul>
+            {% endif %}
+            <p style="margin-top:18px">
+                <a class="knopf" href="{{ url_for('entfolgen_export', snapshot_id=snapshot_id) }}">⬇ Als Textdatei exportieren</a>
+            </p>
+            <form action="{{ url_for('entfolgen_neu', snapshot_id=snapshot_id) }}" method="post">
+                {{ csrf() }}<button type="submit" class="knopf-dezent">Neu starten</button>
+            </form>
+            <p class="hinweis" style="margin-top:14px">Das Tool entfolgt niemandem automatisch – arbeite die Liste selbst in der {{ plattform_name }}-App ab.</p>
+        </div>
+    {% endif %}
+{% endblock %}

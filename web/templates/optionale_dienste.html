@@ -1,0 +1,18 @@
+{#
+  Hier kommen Dienste hinein, die eine EINWILLIGUNG brauchen (Statistik, Werbung,
+  eingebettete Videos, Schriften von fremden Servern ...). Diese Datei wird nur
+  eingebunden, wenn COOKIE_BANNER="einwilligung" gesetzt ist UND der Besucher
+  "Alle akzeptieren" gewählt hat.
+
+  Beispiel (Matomo, selbst gehostet – bitte eigene Adresse und Site-ID eintragen):
+  <script>
+    var _paq = window._paq = window._paq || [];
+    _paq.push(['trackPageView']);
+    (function() { var u = "https://statistik.deine-domain.de/";
+      _paq.push(['setTrackerUrl', u + 'matomo.php']); _paq.push(['setSiteId', '1']);
+      var g = document.createElement('script'); g.async = true; g.src = u + 'matomo.js';
+      document.head.appendChild(g); })();
+  </script>
+
+  Jeder hier eingebundene Dienst muss auch in der Datenschutzerklärung stehen.
+#}

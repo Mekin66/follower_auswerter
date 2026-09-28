@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block titel %}Follower-Auswertung{% endblock %} · Follower-Auswertung</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
+    <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='logo_64.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    {% block kopf %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <a class="marke-link" href="{{ url_for('start') }}"><img src="{{ url_for('static', filename='logo.svg') }}" alt="" width="28" height="28"><span class="marke">Follower-Auswertung</span></a>
+        <form action="{{ url_for('plattform_wechseln') }}" method="post" class="plattform-wahl" aria-label="Plattform wählen">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="zurueck" value="{{ url_for('start') }}">
+            {% for wert, name in plattformen.items() %}
+                <button type="submit" name="plattform" value="{{ wert.value }}" class="{{ 'aktiv' if wert == plattform else '' }}">{{ name }}</button>
+            {% endfor %}
+        </form>
+        <a href="{{ url_for('start') }}">Start</a>
+        <a href="{{ url_for('editor') }}">Listen-Editor</a>
+        <a href="{{ url_for('verlauf') }}">Verlauf</a>
+        <a href="{{ url_for('aktivitaet', name='kommentare') }}">Kommentare</a>
+        <a href="{{ url_for('aktivitaet', name='likes') }}">Likes</a>
+        {% if volle_funktionen %}<a href="{{ url_for('listen') }}">Meine Listen</a>{% endif %}
+        <a href="{{ url_for('anleitung') }}">❓ Anleitung</a>
+        {% if accounts_aktiviert %}
+            <span class="rechts">
+            {% if benutzername %}
+                <a href="{{ url_for('konto') }}" class="nutzer">👤 {{ benutzername }}</a>
+                <form action="{{ url_for('abmelden') }}" method="post">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                    <button type="submit">Abmelden</button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('anmelden') }}">Anmelden</a>
+                {% if registrierung_offen %}<a href="{{ url_for('registrieren') }}">Konto erstellen</a>{% endif %}
+            {% endif %}
+            </span>
+        {% endif %}
+    </nav>
+
+    <main>
+        {% with nachrichten = get_flashed_messages() %}
+            {% if nachrichten %}
+                <ul class="flash">{% for n in nachrichten %}<li>{{ n }}</li>{% endfor %}</ul>
+            {% endif %}
+        {% endwith %}
+        {% block inhalt %}{% endblock %}
+    </main>
+
+    {% if cookie_banner_zeigen %}
+    <form class="cookie-banner" action="{{ url_for('cookies') }}" method="post" role="dialog" aria-label="Cookie-Hinweis">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="zurueck" value="{{ request.path }}">
+        {% if cookie_modus == 'einwilligung' %}
+            <p><b>Cookies und externe Dienste</b><br>
+               Wir nutzen ein technisch notwendiges Cookie, damit die Seite funktioniert. Mit deiner Einwilligung
+               laden wir zusätzlich optionale Dienste (z. B. anonyme Statistik). Du kannst deine Wahl jederzeit unter
+               „Cookie-Einstellungen“ ändern. <a href="{{ url_for('datenschutz') }}">Mehr erfahren</a></p>
+            <div class="cookie-knoepfe">
+                <button type="submit" name="wahl" value="notwendig">Nur notwendige</button>
+                <button type="submit" name="wahl" value="alle">Alle akzeptieren</button>
+            </div>
+        {% else %}
+            <p>Diese Seite verwendet nur ein technisch notwendiges Cookie (Sitzung, Sicherheit{% if accounts_aktiviert %}, Anmeldung{% endif %}).
+               Kein Tracking, keine Werbung. <a href="{{ url_for('datenschutz') }}">Mehr erfahren</a></p>
+            <div class="cookie-knoepfe"><button type="submit" name="wahl" value="notwendig">Verstanden</button></div>
+        {% endif %}
+    </form>
+    {% endif %}
+    {% if optionale_dienste_erlaubt %}{% include "optionale_dienste.html" %}{% endif %}
+
+    <footer>
+        <a href="{{ url_for('impressum') }}">Impressum</a> ·
+        <a href="{{ url_for('datenschutz') }}">Datenschutz</a> ·
+        {% if cookie_modus != 'aus' %}<a href="{{ url_for('cookies') }}">Cookie-Einstellungen</a> ·{% endif %}
+        Kein offizielles Angebot von Instagram/Meta oder TikTok/ByteDance.
+    </footer>
+</body>
+</html>

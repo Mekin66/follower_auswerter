@@ -1,0 +1,135 @@
+{% extends "basis.html" %}
+{% block titel %}Meine Listen{% endblock %}
+{% block inhalt %}
+    <h1>Meine Listen <a class="hilfe-link" href="{{ url_for('anleitung', id='listen') }}">Hilfe</a></h1>
+
+    <div class="tabs">
+        {% for schluessel, text in listen_texte.items() %}
+            <a href="{{ url_for('listen', tab=schluessel) }}" class="{{ 'aktiv' if aktiv == schluessel else '' }}">{{ text }} ({{ daten[schluessel]|length }})</a>
+        {% endfor %}
+        <a href="{{ url_for('listen', tab='markierungen') }}" class="{{ 'aktiv' if aktiv == 'markierungen' else '' }}">Markierte Accounts ({{ markierungen|length }})</a>
+    </div>
+
+    {% macro werkzeugleiste() %}
+        <div class="sammelleiste">
+            <label class="alle"><input type="checkbox" data-alle> Alle sichtbaren</label>
+            <input type="text" data-filter placeholder="Filtern …" aria-label="Liste filtern">
+            <span class="hinweis" data-zaehler style="margin:0">0 ausgewählt</span>
+        </div>
+        <p class="hinweis" style="margin:6px 0 10px">Tipp: Umschalt-Taste halten und ein zweites Häkchen setzen = alles dazwischen auswählen.</p>
+    {% endmacro %}
+
+    {% if aktiv == 'markierungen' %}
+        <form class="karte" action="{{ url_for('markierungen_sammelaktion') }}" method="post" data-sammelform>
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <h2>Markierungen aus dem Entfolgen-Modus ({{ markierungen|length }})</h2>
+            <p class="hinweis" style="margin-top:-6px">Diese Markierungen gelten dauerhaft. Entfernst du eine Markierung, gilt der Account beim nächsten Mal wieder als „neu“.</p>
+            {% if not markierungen %}<p class="hinweis">Noch keine Markierungen.</p>{% else %}
+            {{ werkzeugleiste() }}
+            <div class="zeile-aktionen" style="margin-bottom:12px">
+                <select name="markierung" style="margin:0; width:auto; padding:7px 10px">
+                    {% for wert in ['behalten', 'deaktiviert', 'entfernt'] %}<option value="{{ wert }}">→ {{ texte[wert] }}</option>{% endfor %}
+                    <option value="entfernen">— Markierung entfernen —</option>
+                </select>
+                <button type="submit" class="klein" data-braucht-auswahl>Auf Auswahl anwenden</button>
+            </div>
+            <ul class="liste">
+                {% for username, markierung, am in markierungen %}
+                    <li data-name="{{ username }}">
+                        <input type="checkbox" name="auswahl" value="{{ username }}" aria-label="{{ username }} auswählen">
+                        <span><a href="{{ profil_url(username) }}" target="_blank" rel="noopener">{{ username }}</a>
+                        <span class="hinweis" style="margin:0">· seit {{ am[:10] }}</span></span>
+                        <span class="rechts"><span class="badge {{ {'behalten':'badge-gruen','entfernt':'badge-rot','deaktiviert':'badge-gelb'}[markierung.value] }}">{{ markierung.value }}</span></span>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </form>
+    {% else %}
+        {% set eintraege = daten[aktiv] %}
+        <div class="karte">
+            <h2>{{ listen_texte[aktiv] }} – hinzufügen</h2>
+            <form action="{{ url_for('liste_hinzufuegen', liste=aktiv) }}" method="post">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <label>Nutzernamen oder Profil-Links (mehrere mit Komma oder Zeilenumbruch)
+                    <textarea name="namen" placeholder="anna.m&#10;@max_mustermann&#10;https://www.instagram.com/beispiel/"></textarea>
+                </label>
+                <button type="submit">Hinzufügen</button>
+            </form>
+        </div>
+        <form class="karte" action="{{ url_for('liste_sammelaktion', liste=aktiv) }}" method="post" data-sammelform>
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <h2>{{ eintraege|length }} Einträge
+                {% if eintraege %}<a class="knopf knopf-dezent klein" style="float:right" href="{{ url_for('liste_export', liste=aktiv) }}">⬇ Export</a>{% endif %}</h2>
+            {% if not eintraege %}<p class="hinweis">Diese Liste ist noch leer.</p>{% else %}
+            {{ werkzeugleiste() }}
+            <div class="zeile-aktionen" style="margin-bottom:12px">
+                <select name="aktion" style="margin:0; width:auto; padding:7px 10px">
+                    <option value="entfernen">Aus dieser Liste entfernen</option>
+                    {% for schluessel, text in listen_texte.items() if schluessel != aktiv %}
+                        <option value="verschieben:{{ schluessel }}">Verschieben nach „{{ text }}“</option>
+                        <option value="kopieren:{{ schluessel }}">Kopieren nach „{{ text }}“</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="klein" data-braucht-auswahl>Auf Auswahl anwenden</button>
+            </div>
+            <ul class="liste">
+                {% for username, am in eintraege.items() %}
+                    <li data-name="{{ username }}">
+                        <input type="checkbox" name="auswahl" value="{{ username }}" aria-label="{{ username }} auswählen">
+                        <span><a href="{{ profil_url(username) }}" target="_blank" rel="noopener">{{ username }}</a>
+                        <span class="hinweis" style="margin:0">· hinzugefügt {{ am[:10] }}</span></span>
+                        <span class="rechts">
+                            <button type="submit" name="nur" value="{{ username }}" class="knopf-dezent klein"
+                                    onclick="this.form.aktion.value='entfernen'">Entfernen</button>
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </form>
+    {% endif %}
+
+    <script>
+    // Massenauswahl: "Alle sichtbaren", Filter, Zähler, Umschalt-Klick für Bereiche.
+    // Ohne JavaScript funktionieren die Häkchen trotzdem – nur ohne diese Komfortfunktionen.
+    document.querySelectorAll('[data-sammelform]').forEach(function (form) {
+        var boxen = Array.from(form.querySelectorAll('input[name=auswahl]'));
+        var alle = form.querySelector('[data-alle]'), filter = form.querySelector('[data-filter]');
+        var zaehler = form.querySelector('[data-zaehler]'), letzte = null;
+        var sichtbar = function (b) { return !b.closest('li').hidden; };
+        var aktualisieren = function () {
+            var n = boxen.filter(function (b) { return b.checked; }).length;
+            if (zaehler) zaehler.textContent = n + ' ausgewählt';
+            form.querySelectorAll('[data-braucht-auswahl]').forEach(function (k) { k.disabled = n === 0; });
+            var s = boxen.filter(sichtbar);
+            if (alle) alle.checked = s.length > 0 && s.every(function (b) { return b.checked; });
+        };
+        boxen.forEach(function (b) {
+            b.addEventListener('click', function (e) {
+                if (e.shiftKey && letzte) {
+                    var s = boxen.filter(sichtbar), i = s.indexOf(letzte), j = s.indexOf(b);
+                    s.slice(Math.min(i, j), Math.max(i, j) + 1).forEach(function (x) { x.checked = b.checked; });
+                }
+                letzte = b; aktualisieren();
+            });
+        });
+        if (alle) alle.addEventListener('change', function () {
+            boxen.filter(sichtbar).forEach(function (b) { b.checked = alle.checked; }); aktualisieren();
+        });
+        if (filter) filter.addEventListener('input', function () {
+            var q = filter.value.trim().toLowerCase();
+            boxen.forEach(function (b) { b.closest('li').hidden = q && b.value.indexOf(q) === -1; });
+            aktualisieren();
+        });
+        form.addEventListener('submit', function (e) {
+            var nur = e.submitter && e.submitter.name === 'nur';
+            if (!nur && e.submitter && e.submitter.hasAttribute('data-braucht-auswahl')) {
+                var n = boxen.filter(function (b) { return b.checked; }).length;
+                if (!confirm(n + ' Account(s) bearbeiten?')) e.preventDefault();
+            }
+        });
+        aktualisieren();
+    });
+    </script>
+{% endblock %}

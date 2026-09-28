@@ -1,0 +1,23 @@
+{% extends "basis.html" %}
+{% block titel %}Cookie-Einstellungen{% endblock %}
+{% block inhalt %}
+    <h1>Cookie-Einstellungen</h1>
+    <div class="karte">
+        <h2>Technisch notwendig – immer aktiv</h2>
+        <p class="hinweis" style="margin:0 0 16px">Ein Sitzungs-Cookie („session“): ordnet dir deine Auswertungen zu, merkt sich die gewählte
+            Plattform, schützt Formulare vor Missbrauch{% if accounts_aktiviert %} und hält dich angemeldet{% endif %}.
+            Ohne dieses Cookie funktioniert die Seite nicht. Rechtsgrundlage: § 25 Abs. 2 Nr. 2 TDDDG.</p>
+        {% if cookie_modus == 'einwilligung' %}
+            <h2>Optionale Dienste</h2>
+            <p class="hinweis" style="margin:0 0 16px">Werden nur mit deiner Einwilligung geladen (§ 25 Abs. 1 TDDDG, Art. 6 Abs. 1 lit. a DSGVO).
+                Details in der <a href="{{ url_for('datenschutz') }}">Datenschutzerklärung</a>.
+                Aktueller Stand: <b>{{ 'erlaubt' if wahl == 'alle' else 'nicht erlaubt' }}</b></p>
+        {% endif %}
+        <form action="{{ url_for('cookies') }}" method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="zurueck" value="{{ url_for('cookies') }}">
+            <button type="submit" name="wahl" value="notwendig">Nur notwendige</button>
+            {% if cookie_modus == 'einwilligung' %}<button type="submit" name="wahl" value="alle">Alle akzeptieren</button>{% endif %}
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "basis.html" %}
+{% block titel %}Vergleich{% endblock %}
+{% block inhalt %}
+    <h1>Vergleich</h1>
+    <p class="hinweis">{{ snap_alt.label }} → {{ snap_neu.label }}</p>
+
+    {% if verdacht %}
+    <div class="karte">
+        <h2>⚠ Möglicherweise blockiert ({{ verdacht|length }})</h2>
+        <p class="hinweis" style="margin-top:-6px">Vorher habt ihr euch gegenseitig gefolgt, jetzt fehlen beide Verbindungen.
+            Das passiert bei einer Blockierung – kann aber auch Deaktivierung, Namensänderung oder beidseitiges Entfolgen sein.</p>
+        <ul class="liste">
+            {% for name in verdacht %}
+                <li data-initiale="{{ name[0] }}">
+                    <a href="{{ profil_url(name) }}" target="_blank" rel="noopener">{{ name }}</a>
+                    <span class="rechts">
+                    {% if name in bekannt_blockiert %}
+                        <span class="badge">schon in Blockiert-Liste</span>
+                    {% elif volle_funktionen %}
+                        <form action="{{ url_for('liste_hinzufuegen', liste='blockiert_mich') }}" method="post">
+                            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                            <input type="hidden" name="namen" value="{{ name }}">
+                            <input type="hidden" name="zurueck" value="{{ url_for('listen', tab='blockiert_mich') }}">
+                            <button type="submit" class="klein knopf-dezent">→ „Hat mich blockiert“</button>
+                        </form>
+                    {% endif %}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="zwei_spalten">
+        <div>
+            <h2>Follower (folgen mir)</h2>
+            {% if not follower_aenderungen %}<p class="hinweis">Keine Änderungen.</p>{% endif %}
+            <ul class="liste">
+                {% for a in follower_aenderungen %}
+                    <li data-initiale="{{ a.username[0] }}" class="{{ 'gruen' if a.art == 'neu' else 'rot' }}">
+                        {{ '➕ neu' if a.art == 'neu' else '➖ entfernt' }}: {{ a.username }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            <h2>Following (ich folge)</h2>
+            {% if not following_aenderungen %}<p class="hinweis">Keine Änderungen.</p>{% endif %}
+            <ul class="liste">
+                {% for a in following_aenderungen %}
+                    <li data-initiale="{{ a.username[0] }}" class="{{ 'gruen' if a.art == 'neu' else 'rot' }}">
+                        {{ '➕ neu' if a.art == 'neu' else '➖ entfernt' }}: {{ a.username }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}

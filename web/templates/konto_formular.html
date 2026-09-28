@@ -1,0 +1,46 @@
+{% extends "basis.html" %}
+{% block titel %}{{ 'Konto erstellen' if modus == 'registrieren' else 'Anmelden' }}{% endblock %}
+{% block inhalt %}
+    <div class="karte" style="max-width:440px; margin:0 auto">
+        <h1>{{ 'Konto erstellen' if modus == 'registrieren' else 'Anmelden' }}</h1>
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            {% if modus == 'registrieren' %}
+                <label>Benutzername
+                    <input type="text" name="benutzername" autocomplete="username" required minlength="3" maxlength="30" value="{{ request.form.get('benutzername', '') }}">
+                </label>
+                <label>E-Mail-Adresse{% if not (cfg.E_MAIL_PFLICHT or cfg.E_MAIL_BESTAETIGUNG) %} (freiwillig){% endif %}
+                    <input type="email" name="email" autocomplete="email" maxlength="254" {% if cfg.E_MAIL_PFLICHT or cfg.E_MAIL_BESTAETIGUNG %}required{% endif %} value="{{ request.form.get('email', '') }}">
+                </label>
+            {% else %}
+                <label>Benutzername oder E-Mail
+                    <input type="text" name="benutzername" autocomplete="username" required maxlength="254" value="{{ request.form.get('benutzername', '') }}">
+                </label>
+            {% endif %}
+            <label>Passwort
+                <input type="password" name="passwort" autocomplete="{{ 'new-password' if modus == 'registrieren' else 'current-password' }}" required>
+            </label>
+            {% if modus == 'registrieren' %}
+                <label>Passwort wiederholen
+                    <input type="password" name="passwort2" autocomplete="new-password" required>
+                </label>
+                <p class="hinweis" style="margin:0 0 12px">Passwort: mindestens 8 Zeichen.
+                    {% if cfg.E_MAIL_BESTAETIGUNG %}Nach dem Absenden bekommst du eine E-Mail mit einem Bestätigungs-Link. Erst danach ist dein Konto aktiv.{% endif %}
+                    Die E-Mail-Adresse brauchen wir für die Bestätigung und falls du dein Passwort vergisst.</p>
+                <label class="checkzeile"><input type="checkbox" name="zustimmung" value="1" required>
+                    <span>Ich habe die <a href="{{ url_for('datenschutz') }}" target="_blank">Datenschutzhinweise</a> gelesen.</span></label>
+                {% if cfg.NEWSLETTER_ABFRAGEN %}
+                    <label class="checkzeile"><input type="checkbox" name="newsletter" value="1">
+                        <span>Freiwillig: Ich möchte gelegentlich Neuigkeiten zur App per E-Mail bekommen. Abbestellen jederzeit unter „Konto“.</span></label>
+                {% endif %}
+                <button type="submit">Konto erstellen</button>
+                <p class="hinweis" style="margin-top:14px">Schon ein Konto? <a href="{{ url_for('anmelden') }}">Anmelden</a></p>
+            {% else %}
+                <button type="submit">Anmelden</button>
+                <p class="hinweis" style="margin-top:14px"><a href="{{ url_for('passwort_vergessen') }}">Passwort vergessen?</a>
+                    · <a href="{{ url_for('bestaetigung_erneut') }}">Bestätigungs-Mail nicht bekommen?</a></p>
+                {% if registrierung_offen %}<p class="hinweis" style="margin-top:14px">Noch kein Konto? <a href="{{ url_for('registrieren') }}">Konto erstellen</a></p>{% endif %}
+            {% endif %}
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,633 @@
+#:kivy 2.3.0
+
+# ---------- Wiederverwendbare, farbige Buttons (ersetzen Kivys Standard-Grau) ----------
+
+<PrimaerKnopf@Button>:
+    background_normal: ""
+    background_down: ""
+    background_color: (0.098, 0.639, 0.925, 1) if self.state == "normal" else (0.094, 0.467, 0.788, 1)
+    color: 1, 1, 1, 1
+    bold: True
+    font_size: "15sp"
+
+<ErfolgKnopf@Button>:
+    background_normal: ""
+    background_down: ""
+    background_color: (0.133, 0.773, 0.369, 1) if self.state == "normal" else (0.086, 0.639, 0.290, 1)
+    color: 1, 1, 1, 1
+    bold: True
+    font_size: "15sp"
+
+<GefahrKnopf@Button>:
+    background_normal: ""
+    background_down: ""
+    background_color: (0.937, 0.267, 0.267, 1) if self.state == "normal" else (0.863, 0.149, 0.149, 1)
+    color: 1, 1, 1, 1
+    bold: True
+    font_size: "15sp"
+
+<WarnungKnopf@Button>:
+    background_normal: ""
+    background_down: ""
+    background_color: (0.961, 0.620, 0.043, 1) if self.state == "normal" else (0.851, 0.467, 0.024, 1)
+    color: 0.227, 0.165, 0, 1
+    bold: True
+    font_size: "15sp"
+
+<DezentKnopf@Button>:
+    background_normal: ""
+    background_down: ""
+    background_color: (0.894, 0.902, 0.921, 1) if self.state == "normal" else (0.835, 0.847, 0.863, 1)
+    color: 0.106, 0.118, 0.129, 1
+    bold: True
+    font_size: "14sp"
+
+# ---------- Kopfzeile (wie im Web-/Desktop-Design) ----------
+
+<Kopfzeile@BoxLayout>:
+    size_hint_y: None
+    height: "52dp"
+    canvas.before:
+        Color:
+            rgba: 0.110, 0.118, 0.129, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    padding: "12dp", "8dp", 0, "8dp"
+    spacing: "10dp"
+    Image:
+        source: app.logo
+        size_hint_x: None
+        width: "36dp"
+        fit_mode: "contain"
+    Label:
+        text: app.title
+        bold: True
+        font_size: "18sp"
+        color: 0.902, 0.408, 0.235, 1
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+
+# ---------- Karten-Panel (weißer Kasten mit Schatten-Optik) ----------
+
+<Karte@BoxLayout>:
+    orientation: "vertical"
+    padding: "16dp"
+    spacing: "8dp"
+    size_hint_y: None
+    height: self.minimum_height
+    canvas.before:
+        Color:
+            rgba: 0.878, 0.890, 0.918, 1
+        RoundedRectangle:
+            pos: self.x - 1, self.y - 1
+            size: self.width + 2, self.height + 2
+            radius: [12]
+        Color:
+            rgba: 1, 1, 1, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [12]
+
+
+# ---------- Listen (RecycleView = schnell auch bei tausenden Einträgen) ----------
+
+<ListenZeile@Label>:
+    size_hint_y: None
+    height: "28dp"
+    font_size: "14sp"
+    text_size: self.width, None
+    halign: "left"
+    valign: "middle"
+    shorten: True
+
+<NamensListe@RecycleView>:
+    viewclass: "ListenZeile"
+    bar_width: "6dp"
+    scroll_type: ["bars", "content"]
+    RecycleBoxLayout:
+        default_size: None, dp(28)
+        default_size_hint: 1, None
+        size_hint_y: None
+        height: self.minimum_height
+        orientation: "vertical"
+
+<ZeileMitKnopf>:
+    size_hint_y: None
+    height: "44dp"
+    spacing: "6dp"
+    CheckBox:
+        size_hint_x: None
+        width: "40dp" if root.umschalten else 0
+        opacity: 1 if root.umschalten else 0
+        disabled: not root.umschalten
+        active: root.ausgewaehlt
+        color: 0.094, 0.467, 0.788, 1
+        on_release: root.umschalten() if root.umschalten else None
+    Label:
+        text: root.text
+        color: root.farbe
+        font_size: "14sp"
+        text_size: self.width, None
+        halign: "left"
+        valign: "middle"
+        shorten: True
+    DezentKnopf:
+        text: root.knopf_text
+        size_hint_x: None
+        width: "120dp" if root.knopf_text else 0
+        opacity: 1 if root.knopf_text else 0
+        disabled: not root.knopf_text
+        font_size: "13sp"
+        on_release: root.aktion() if root.aktion else None
+
+<AktionsListe@RecycleView>:
+    viewclass: "ZeileMitKnopf"
+    bar_width: "6dp"
+    scroll_type: ["bars", "content"]
+    RecycleBoxLayout:
+        default_size: None, dp(44)
+        default_size_hint: 1, None
+        size_hint_y: None
+        height: self.minimum_height
+        orientation: "vertical"
+        spacing: "2dp"
+
+<Eingabe@TextInput>:
+    multiline: False
+    font_size: "15sp"
+    padding: "10dp", "12dp"
+    background_normal: ""
+    background_active: ""
+    background_color: 0.98, 0.98, 0.98, 1
+    foreground_color: 0.106, 0.118, 0.129, 1
+    write_tab: False
+
+<Titel@Label>:
+    bold: True
+    font_size: "15sp"
+    color: 0.106, 0.118, 0.129, 1
+    size_hint_y: None
+    height: "26dp"
+    halign: "left"
+    text_size: self.size
+
+<HauptScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.941, 0.949, 0.961, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        orientation: "vertical"
+
+        Kopfzeile:
+
+        ScrollView:
+            do_scroll_x: False
+            BoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: "12dp"
+                spacing: "12dp"
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: "44dp"
+                    spacing: "6dp"
+                    PrimaerKnopf:
+                        text: "Instagram"
+                        opacity: 1 if root.plattform_name == "Instagram" else 0.45
+                        on_release: root.plattform_waehlen("instagram")
+                    PrimaerKnopf:
+                        text: "TikTok"
+                        opacity: 1 if root.plattform_name == "TikTok" else 0.45
+                        on_release: root.plattform_waehlen("tiktok")
+                    DezentKnopf:
+                        text: "? Anleitung"
+                        size_hint_x: 0.8
+                        on_release: root.manager.current = "hilfe"
+
+                Karte:
+                    Titel:
+                        text: "1. " + root.plattform_name + "-Daten laden"
+                    PrimaerKnopf:
+                        size_hint_y: None
+                        height: "48dp"
+                        text: "Export-Datei wählen (ZIP/JSON)"
+                        on_release: root.datei_dialog_oeffnen("zip")
+                    BoxLayout:
+                        size_hint_y: None
+                        height: "44dp"
+                        spacing: "8dp"
+                        DezentKnopf:
+                            text: "Follower (JSON/TXT)"
+                            font_size: "13sp"
+                            on_release: root.datei_dialog_oeffnen("follower")
+                        DezentKnopf:
+                            text: "Following (JSON/TXT)"
+                            font_size: "13sp"
+                            on_release: root.datei_dialog_oeffnen("following")
+                    DezentKnopf:
+                        size_hint_y: None
+                        height: "44dp"
+                        text: "Listen-Editor: selbst eintippen"
+                        on_release: root.oeffnen("editor")
+
+                Karte:
+                    Titel:
+                        text: "2. Auswerten & weiter"
+                    ErfolgKnopf:
+                        size_hint_y: None
+                        height: "48dp"
+                        text: "Auswerten & speichern"
+                        on_release: root.auswerten()
+                    WarnungKnopf:
+                        size_hint_y: None
+                        height: "46dp"
+                        text: "Entfolgen-Modus"
+                        on_release: root.oeffnen("entfolgen")
+                    BoxLayout:
+                        size_hint_y: None
+                        height: "44dp"
+                        spacing: "8dp"
+                        DezentKnopf:
+                            text: "Freunde-Liste"
+                            on_release: root.oeffnen("freunde")
+                        DezentKnopf:
+                            text: "Meine Listen"
+                            on_release: root.oeffnen("listen")
+                    Label:
+                        size_hint_y: None
+                        height: max(self.texture_size[1] + dp(8), dp(24))
+                        text: root.status_text
+                        color: 0.396, 0.404, 0.420, 1
+                        font_size: "13sp"
+                        text_size: self.width, None
+                        halign: "left"
+
+                Karte:
+                    Titel:
+                        text: "3. Kommentare & Likes aufräumen"
+                    Label:
+                        size_hint_y: None
+                        height: max(self.texture_size[1] + dp(6), dp(20))
+                        text: "Heikle Kommentare zuerst – mit Link zum schnellen Löschen."
+                        color: 0.396, 0.404, 0.420, 1
+                        font_size: "13sp"
+                        text_size: self.width, None
+                        halign: "left"
+
+                    BoxLayout:
+                        size_hint_y: None
+                        height: "46dp"
+                        spacing: "8dp"
+                        WarnungKnopf:
+                            text: "Kommentare"
+                            on_release: root.aktivitaet_oeffnen("kommentar")
+                        DezentKnopf:
+                            text: "Likes"
+                            on_release: root.aktivitaet_oeffnen("like")
+
+                Karte:
+                    Label:
+                        text: "Rot = kein gegenseitiges Folgen"
+                        size_hint_y: None
+                        height: "22dp"
+                        color: 0.863, 0.149, 0.149, 1
+                        font_size: "13sp"
+                        halign: "left"
+                        text_size: self.size
+                    Label:
+                        id: lbl_following
+                        text: "Ich folge"
+                        size_hint_y: None
+                        height: "24dp"
+                        bold: True
+                        color: 0.106, 0.118, 0.129, 1
+                        halign: "left"
+                        text_size: self.size
+                    NamensListe:
+                        id: following_liste
+                        size_hint_y: None
+                        height: "260dp"
+                    Label:
+                        id: lbl_follower
+                        text: "Folgen mir"
+                        size_hint_y: None
+                        height: "24dp"
+                        bold: True
+                        color: 0.106, 0.118, 0.129, 1
+                        halign: "left"
+                        text_size: self.size
+                    NamensListe:
+                        id: follower_liste
+                        size_hint_y: None
+                        height: "260dp"
+
+
+<EntfolgenScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.941, 0.949, 0.961, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    BoxLayout:
+        orientation: "vertical"
+        Kopfzeile:
+        DezentKnopf:
+            size_hint_y: None
+            height: "42dp"
+            text: "< Zurück zur Übersicht"
+            on_release: root.zurueck_zum_hauptscreen()
+        ScrollView:
+            do_scroll_x: False
+            BoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: "12dp"
+                Karte:
+                    id: inhalt
+                    padding: "18dp"
+                    spacing: "10dp"
+
+
+<FreundeScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.941, 0.949, 0.961, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    BoxLayout:
+        orientation: "vertical"
+        Kopfzeile:
+        DezentKnopf:
+            size_hint_y: None
+            height: "42dp"
+            text: "< Zurück zur Übersicht"
+            on_release: root.zurueck_zum_hauptscreen()
+        BoxLayout:
+            orientation: "vertical"
+            padding: "12dp"
+            spacing: "8dp"
+            Label:
+                text: root.info
+                color: 0.396, 0.404, 0.420, 1
+                font_size: "13sp"
+                size_hint_y: None
+                height: "36dp"
+                text_size: self.width, None
+                halign: "left"
+            BoxLayout:
+                size_hint_y: None
+                height: "46dp"
+                spacing: "6dp"
+                Eingabe:
+                    id: eingabe
+                    hint_text: "Freund hinzufügen: nutzername"
+                    on_text_validate: root.hinzufuegen()
+                ErfolgKnopf:
+                    text: "+"
+                    size_hint_x: None
+                    width: "56dp"
+                    on_release: root.hinzufuegen()
+            AktionsListe:
+                id: liste
+
+
+<ListenScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.941, 0.949, 0.961, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    BoxLayout:
+        orientation: "vertical"
+        Kopfzeile:
+        DezentKnopf:
+            size_hint_y: None
+            height: "42dp"
+            text: "< Zurück zur Übersicht"
+            on_release: root.zurueck_zum_hauptscreen()
+        GridLayout:
+            cols: 2
+            size_hint_y: None
+            height: "92dp"
+            padding: "12dp", "6dp"
+            spacing: "6dp"
+            PrimaerKnopf:
+                text: "Von mir blockiert"
+                font_size: "13sp"
+                opacity: 1 if root.aktiv == "blockiert_von_mir" else 0.55
+                on_release: root.tab("blockiert_von_mir")
+            PrimaerKnopf:
+                text: "Hat mich blockiert"
+                font_size: "13sp"
+                opacity: 1 if root.aktiv == "blockiert_mich" else 0.55
+                on_release: root.tab("blockiert_mich")
+            PrimaerKnopf:
+                text: "Freunde (manuell)"
+                font_size: "13sp"
+                opacity: 1 if root.aktiv == "freunde" else 0.55
+                on_release: root.tab("freunde")
+            PrimaerKnopf:
+                text: "Markierte Accounts"
+                font_size: "13sp"
+                opacity: 1 if root.aktiv == "markierungen" else 0.55
+                on_release: root.tab("markierungen")
+        BoxLayout:
+            orientation: "vertical"
+            padding: "12dp"
+            spacing: "8dp"
+            Label:
+                text: root.info
+                color: 0.396, 0.404, 0.420, 1
+                font_size: "13sp"
+                size_hint_y: None
+                height: "30dp"
+                text_size: self.width, None
+                halign: "left"
+            BoxLayout:
+                id: eingabe_zeile
+                size_hint_y: None
+                height: "46dp"
+                spacing: "6dp"
+                Eingabe:
+                    id: eingabe
+                    hint_text: "nutzername (mehrere mit Komma)"
+                    on_text_validate: root.hinzufuegen()
+                ErfolgKnopf:
+                    text: "+"
+                    size_hint_x: None
+                    width: "56dp"
+                    on_release: root.hinzufuegen()
+            BoxLayout:
+                size_hint_y: None
+                height: "40dp"
+                spacing: "6dp"
+                DezentKnopf:
+                    text: "Alle"
+                    font_size: "13sp"
+                    size_hint_x: 0.22
+                    on_release: root.alle_auswaehlen(True)
+                DezentKnopf:
+                    text: "Keine"
+                    font_size: "13sp"
+                    size_hint_x: 0.22
+                    on_release: root.alle_auswaehlen(False)
+                GefahrKnopf:
+                    id: btn_sammel
+                    text: "Auswahl entfernen"
+                    font_size: "13sp"
+                    disabled: root.anzahl_ausgewaehlt == "0"
+                    opacity: 0.45 if self.disabled else 1
+                    on_release: root.sammelaktion()
+                Label:
+                    text: root.anzahl_ausgewaehlt
+                    size_hint_x: None
+                    width: "32dp"
+                    bold: True
+                    color: 0.106, 0.118, 0.129, 1
+            AktionsListe:
+                id: liste
+
+
+<EditorScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.941, 0.949, 0.961, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    BoxLayout:
+        orientation: "vertical"
+        Kopfzeile:
+        DezentKnopf:
+            size_hint_y: None
+            height: "42dp"
+            text: "< Zurück zur Übersicht"
+            on_release: root.zurueck_zum_hauptscreen()
+        BoxLayout:
+            orientation: "vertical"
+            padding: "12dp"
+            spacing: "8dp"
+            BoxLayout:
+                size_hint_y: None
+                height: "44dp"
+                spacing: "6dp"
+                PrimaerKnopf:
+                    text: "Follower"
+                    opacity: 1 if root.aktiv == "follower" else 0.45
+                    on_release: root.tab("follower")
+                PrimaerKnopf:
+                    text: "Following"
+                    opacity: 1 if root.aktiv == "following" else 0.45
+                    on_release: root.tab("following")
+            Label:
+                text: root.info
+                color: 0.396, 0.404, 0.420, 1
+                font_size: "13sp"
+                size_hint_y: None
+                height: "34dp"
+                text_size: self.width, None
+                halign: "left"
+            Eingabe:
+                id: feld_follower
+                multiline: True
+                hint_text: "Ein Name pro Zeile – wer DIR folgt"
+                size_hint_y: 1 if root.aktiv == "follower" else None
+                height: 0
+                opacity: 1 if root.aktiv == "follower" else 0
+                disabled: root.aktiv != "follower"
+                on_text: root._zaehlen()
+            Eingabe:
+                id: feld_following
+                multiline: True
+                hint_text: "Ein Name pro Zeile – wem DU folgst"
+                size_hint_y: 1 if root.aktiv == "following" else None
+                height: 0
+                opacity: 1 if root.aktiv == "following" else 0
+                disabled: root.aktiv != "following"
+                on_text: root._zaehlen()
+            GridLayout:
+                cols: 2
+                size_hint_y: None
+                height: "96dp"
+                spacing: "6dp"
+                DezentKnopf:
+                    text: "TXT laden"
+                    on_release: root.txt_laden()
+                DezentKnopf:
+                    text: "Als TXT sichern"
+                    on_release: root.txt_speichern()
+                DezentKnopf:
+                    text: "Letzte übernehmen"
+                    on_release: root.letzte_uebernehmen()
+                ErfolgKnopf:
+                    text: "Auswerten"
+                    on_release: root.auswerten()
+
+
+<HilfeScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.941, 0.949, 0.961, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    BoxLayout:
+        orientation: "vertical"
+        Kopfzeile:
+        DezentKnopf:
+            size_hint_y: None
+            height: "42dp"
+            text: "< Zurück zur Übersicht"
+            on_release: root.zurueck_zum_hauptscreen()
+        ScrollView:
+            do_scroll_x: False
+            BoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: "12dp"
+                Karte:
+                    id: inhalt
+                    padding: "18dp"
+                    spacing: "8dp"
+
+
+<AktivitaetScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.941, 0.949, 0.961, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    BoxLayout:
+        orientation: "vertical"
+        Kopfzeile:
+        DezentKnopf:
+            size_hint_y: None
+            height: "42dp"
+            text: "< Zurück zur Übersicht"
+            on_release: root.zurueck_zum_hauptscreen()
+        ScrollView:
+            do_scroll_x: False
+            BoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: "12dp"
+                Karte:
+                    id: inhalt
+                    padding: "18dp"
+                    spacing: "10dp"

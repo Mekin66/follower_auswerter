@@ -1,0 +1,12 @@
+.venv/
+.idea/
+__pycache__/
+*.pyc
+web/daten/
+mobile/core/
+mobile/bin/
+mobile/.buildozer/
+build/
+dist/
+packaging/server/.env
+*.sqlite3

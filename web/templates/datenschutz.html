@@ -1,0 +1,95 @@
+{% extends "basis.html" %}
+{% block titel %}Datenschutz{% endblock %}
+{% block inhalt %}
+    <h1>Datenschutzerklärung</h1>
+    <div class="karte">
+        {% if not cfg.BETREIBER_NAME or not cfg.HOSTER_NAME %}
+            <p class="rot">⚠ Vorlage noch nicht vollständig: BETREIBER_NAME, BETREIBER_ADRESSE, BETREIBER_EMAIL, HOSTER_NAME,
+                HOSTER_SITZ und AUFSICHTSBEHOERDE setzen. Vor der Veröffentlichung rechtlich prüfen lassen.</p>
+        {% endif %}
+
+        <h3>1. Verantwortlicher</h3>
+        <p>{{ cfg.BETREIBER_NAME or '[Name]' }}, {{ cfg.BETREIBER_ADRESSE or '[Anschrift]' }},
+           E-Mail: {{ cfg.BETREIBER_EMAIL or '[E-Mail]' }}</p>
+
+        <h3>2. Welche Daten verarbeitet werden und wozu</h3>
+        <p><b>Hochgeladene Exporte und Listen.</b> Aus einem Instagram- oder TikTok-Datenexport bzw. einer selbst erstellten
+           Liste werden nur Nutzernamen und das Datum der Verbindung gelesen (Follower, gefolgte Accounts
+           {% if accounts_aktiviert %}und – bei angemeldeten Nutzern – blockierte Profile und „Enge Freunde“{% endif %}).
+           Enthält der Export deine eigenen Kommentare und Likes, werden zusätzlich Kommentartext, Datum, der
+           Nutzername des Beitrags-Inhabers und – falls vorhanden – der Link zum Beitrag gespeichert, damit du sie im
+           Kommentar- bzw. Like-Modus durchgehen kannst. Die Einstufung „harmlos/prüfen/kritisch“ erfolgt automatisch
+           nach festen Regeln (Wortlisten, Länge) ausschließlich auf diesem Server; es findet keine Weitergabe und
+           keine automatisierte Entscheidung mit Rechtswirkung statt – du entscheidest selbst.
+           Alle anderen Inhalte des Exports (Fotos, Nachrichten usw.) werden nicht gespeichert.
+           Zweck: dir die Auswertung anzuzeigen. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Bereitstellung des von dir
+           angeforderten Dienstes).</p>
+        <p><b>Daten anderer Personen.</b> Die Listen enthalten öffentliche Nutzernamen anderer Personen. Sie werden
+           ausschließlich dir angezeigt, nicht veröffentlicht, nicht mit anderen Daten verknüpft und nach den unten
+           genannten Fristen gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse, die eigenen
+           Verbindungen auszuwerten).</p>
+        {% if accounts_aktiviert %}
+        <p><b>Benutzerkonto.</b> Benutzername, E-Mail-Adresse, Passwort (nur als Hash, nie im Klartext), Zeitpunkt der
+           Registrierung, der E-Mail-Bestätigung und der letzten Anmeldung, dazu deine Auswertungen, Markierungen und Listen.
+           Die E-Mail-Adresse nutzen wir nur für die Bestätigung deiner Registrierung (Double-Opt-in), zum Zurücksetzen
+           des Passworts und für wichtige Hinweise zu deinem Konto. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.</p>
+        {% if cfg.NEWSLETTER_ABFRAGEN %}
+        <p><b>Neuigkeiten per E-Mail (freiwillig).</b> Nur wenn du das entsprechende Häkchen setzt, schicken wir dir
+           gelegentlich Neuigkeiten zur App. Wir speichern dazu den Zeitpunkt deiner Einwilligung. Rechtsgrundlage:
+           Art. 6 Abs. 1 lit. a DSGVO, § 7 Abs. 2 Nr. 2 UWG. Du kannst die Einwilligung jederzeit unter „Mein Konto“
+           widerrufen.</p>
+        {% endif %}
+        <p><b>E-Mail-Versand.</b> {% if cfg.SMTP_HOST %}E-Mails werden über den Mailserver {{ cfg.SMTP_HOST }}
+           verschickt.{% else %}[Hier den E-Mail-Anbieter eintragen.]{% endif %} Der Anbieter verarbeitet dabei deine
+           E-Mail-Adresse und den Inhalt der Mail in unserem Auftrag (Art. 28 DSGVO).</p>
+        {% endif %}
+        {% if auto_check_aktiviert %}
+        <p><b>Automatische Prüfung (optional, nur auf deinen Klick).</b> Der Server ruft für die betroffenen Nutzernamen die
+           öffentliche Profilseite bei Instagram bzw. TikTok ab (ohne Login), um festzustellen, ob ein Account noch existiert.
+           Dabei erhält die Plattform die Server-Adresse und den abgefragten Nutzernamen, nicht deine Daten.</p>
+        {% endif %}
+
+        <h3>3. Speicherdauer</h3>
+        <ul>
+            <li>Ohne Konto: automatische Löschung nach spätestens {{ aufbewahrung_stunden|int }} Stunden.</li>
+            {% if accounts_aktiviert %}
+            <li>Mit Konto: bis du Daten oder dein Konto löschst (unter „Mein Konto“ jederzeit möglich).
+                {% if cfg.KONTO_LOESCHEN_NACH_TAGEN %}Konten ohne Anmeldung seit {{ cfg.KONTO_LOESCHEN_NACH_TAGEN }} Tagen werden
+                samt aller Daten automatisch gelöscht.{% endif %}</li>
+            <li>Nicht bestätigte Registrierungen: automatische Löschung nach {{ cfg.BESTAETIGUNG_GUELTIG_STUNDEN }} Stunden.</li>
+            {% endif %}
+            <li>Server-Protokolle des Hosters (IP-Adresse, Zeitpunkt, aufgerufene Seite): nach den Fristen des Hosters,
+                üblicherweise wenige Tage. Die Anwendung selbst schreibt keine Zugriffsprotokolle.</li>
+        </ul>
+
+        <h3>4. Cookies</h3>
+        <p>Es wird ein technisch notwendiges Sitzungs-Cookie („session“) gesetzt. Es ordnet dir deine Auswertungen zu,
+           speichert die gewählte Plattform, schützt Formulare vor Missbrauch (CSRF){% if accounts_aktiviert %} und hält dich
+           angemeldet{% endif %}. Rechtsgrundlage: § 25 Abs. 2 Nr. 2 TDDDG und Art. 6 Abs. 1 lit. f DSGVO. Es werden keine
+           Tracking- oder Werbe-Cookies und keine Analyse-Werkzeuge verwendet{% if cookie_modus == 'einwilligung' %}, außer du
+           willigst im Cookie-Banner ausdrücklich ein (§ 25 Abs. 1 TDDDG, Art. 6 Abs. 1 lit. a DSGVO). Die Einwilligung kannst
+           du jederzeit unter <a href="{{ url_for('cookies') }}">Cookie-Einstellungen</a> widerrufen. Eingesetzte optionale
+           Dienste: [hier jeden Dienst mit Anbieter, Zweck und Speicherdauer eintragen]{% endif %}.
+           Die Seite lädt keine Inhalte von fremden Servern (keine externen Schriften, Skripte oder Videos).</p>
+
+        <h3>5. Hosting und Empfänger</h3>
+        <p>Die Seite wird bei {{ cfg.HOSTER_NAME or '[Hoster]' }}{% if cfg.HOSTER_SITZ %} ({{ cfg.HOSTER_SITZ }}){% endif %}
+           betrieben. Mit dem Hoster besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO. Weitere Empfänger gibt
+           es nicht; Daten werden nicht verkauft oder für Werbung genutzt.
+           [Falls der Hoster seinen Sitz außerhalb der EU hat: Grundlage der Übermittlung angeben, z. B. EU-US Data Privacy
+           Framework oder Standardvertragsklauseln.]</p>
+
+        <h3>6. Deine Rechte</h3>
+        <p>Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18),
+           Datenübertragbarkeit (Art. 20){% if accounts_aktiviert %} – dafür gibt es unter „Mein Konto“ einen Download aller
+           Daten –{% endif %} und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21 DSGVO).
+           Eine erteilte Einwilligung kannst du jederzeit mit Wirkung für die Zukunft widerrufen. Anfragen an die oben
+           genannte E-Mail-Adresse. Du hast außerdem ein Beschwerderecht bei einer Aufsichtsbehörde, z. B.
+           {{ cfg.AUFSICHTSBEHOERDE or '[Datenschutz-Aufsichtsbehörde deines Bundeslandes]' }}.</p>
+
+        <h3>7. Sonstiges</h3>
+        <p>Eine automatisierte Entscheidungsfindung im Sinne von Art. 22 DSGVO findet nicht statt; Vorschläge der
+           automatischen Prüfung werden erst nach deiner Bestätigung übernommen. Die Nutzung ist freiwillig; ohne Upload
+           kann keine Auswertung erstellt werden.</p>
+    </div>
+{% endblock %}

@@ -1,0 +1,11 @@
+# Domain eintragen (DNS-A-Record muss auf den Server zeigen). Caddy holt das HTTPS-Zertifikat automatisch.
+deine-domain.de {
+    encode gzip
+    reverse_proxy app:8000
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "same-origin"
+    }
+}

@@ -1,0 +1,11 @@
+.venv
+.idea
+**/__pycache__
+web/daten
+mobile
+gui
+packaging
+tests
+dist
+build
+*.zip

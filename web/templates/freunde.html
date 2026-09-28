@@ -1,0 +1,44 @@
+{% extends "basis.html" %}
+{% block titel %}Freunde{% endblock %}
+{% block inhalt %}
+    <h1>👥 Freunde-Liste <a class="hilfe-link" href="{{ url_for('anleitung', id='ergebnis') }}">Hilfe</a></h1>
+    <p class="hinweis">
+        Freunde = alle, die dir folgen <b>und</b> denen du folgst{% if volle_funktionen %}, plus alle, die du selbst in deine Freunde-Liste eingetragen hast{% endif %}.
+        Basis: {{ snapshot.label }}
+    </p>
+
+    <p>
+        <a class="knopf" href="{{ url_for('freunde_export', snapshot_id=snapshot.id, format='csv') }}">⬇ Als CSV (Excel)</a>
+        <a class="knopf knopf-dezent" href="{{ url_for('freunde_export', snapshot_id=snapshot.id, format='txt') }}">⬇ Als Textdatei</a>
+    </p>
+
+    {% if volle_funktionen %}
+    <div class="karte">
+        <h2>Freund manuell hinzufügen</h2>
+        <form action="{{ url_for('liste_hinzufuegen', liste='freunde') }}" method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="zurueck" value="{{ url_for('freunde', snapshot_id=snapshot.id) }}">
+            <label>Nutzernamen (mehrere mit Komma oder Zeilenumbruch trennen)
+                <input type="text" name="namen" placeholder="z. B. anna.m, @max_mustermann">
+            </label>
+            <button type="submit">Hinzufügen</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="karte">
+        <h2>{{ freunde|length }} Freunde</h2>
+        {% if not freunde %}<p class="hinweis">Noch keine Freunde gefunden.</p>{% endif %}
+        <ul class="liste">
+            {% for f in freunde %}
+                <li data-initiale="{{ f.username[0] }}">
+                    <span><a href="{{ profil_url(f.username) }}" target="_blank" rel="noopener">{{ f.username }}</a>
+                    <span class="hinweis" style="margin:0">· folgt dir seit {{ f.folgt_mir_seit }} · du folgst seit {{ f.ich_folge_seit }}</span></span>
+                    <span class="rechts">
+                        <span class="badge {{ 'badge-blau' if 'manuell' in f.quelle else 'badge-gruen' }}">{{ f.quelle }}</span>
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

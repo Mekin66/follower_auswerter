@@ -1,0 +1,63 @@
+{% extends "basis.html" %}
+{#
+  Kleine Seiten rund um E-Mail und Passwort. "modus" bestimmt, was angezeigt wird:
+    postfach           -> "Schau in dein Postfach" (nach Registrierung / Anforderung)
+    unbestaetigt       -> Login ok, aber E-Mail noch nicht bestätigt
+    erneut             -> Formular: Bestätigungs-Mail erneut senden
+    passwort_vergessen -> Formular: Link zum Zurücksetzen anfordern
+    passwort_neu       -> Formular: neues Passwort festlegen (über Link aus der Mail)
+    ungueltig          -> Link abgelaufen oder falsch
+#}
+{% block titel %}Konto{% endblock %}
+{% block inhalt %}
+<div class="karte" style="max-width:480px; margin:0 auto">
+{% if modus == 'postfach' %}
+    <h1>📬 Schau in dein Postfach</h1>
+    <p>Wenn die Angaben stimmen, haben wir dir {% if email %}an <b>{{ email }}</b> {% endif %}eine E-Mail geschickt.
+       Klicke auf den Link darin.</p>
+    <p class="hinweis">Nichts angekommen? Warte ein paar Minuten und sieh im Spam-Ordner nach.
+       <a href="{{ url_for('bestaetigung_erneut') }}">Bestätigungs-Mail erneut senden</a></p>
+    {% if testmodus %}
+        <p class="hinweis" style="color:#b45309">Testmodus: Es ist kein Mail-Server (SMTP) eingerichtet.
+           Die E-Mail steht im Server-Log bzw. in der Konsole.</p>
+    {% endif %}
+{% elif modus == 'unbestaetigt' %}
+    <h1>Fast geschafft</h1>
+    <p>Dein Konto ist noch nicht bestätigt. Klicke auf den Link in der E-Mail an <b>{{ email }}</b>.</p>
+    <form method="post" action="{{ url_for('bestaetigung_erneut') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="eingabe" value="{{ email }}">
+        <button type="submit">Bestätigungs-Mail erneut senden</button>
+    </form>
+{% elif modus == 'erneut' %}
+    <h1>Bestätigungs-Mail erneut senden</h1>
+    <form method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <label>Benutzername oder E-Mail <input type="text" name="eingabe" required maxlength="254"></label>
+        <button type="submit">Erneut senden</button>
+    </form>
+{% elif modus == 'passwort_vergessen' %}
+    <h1>Passwort vergessen?</h1>
+    <p class="hinweis">Gib deinen Benutzernamen oder deine E-Mail-Adresse ein. Du bekommst einen Link,
+       mit dem du ein neues Passwort festlegst.</p>
+    <form method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <label>Benutzername oder E-Mail <input type="text" name="eingabe" required maxlength="254" autocomplete="username"></label>
+        <button type="submit">Link anfordern</button>
+    </form>
+{% elif modus == 'passwort_neu' %}
+    <h1>Neues Passwort festlegen</h1>
+    <form method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <label>Neues Passwort <input type="password" name="neu" autocomplete="new-password" required minlength="8"></label>
+        <label>Neues Passwort wiederholen <input type="password" name="neu2" autocomplete="new-password" required minlength="8"></label>
+        <button type="submit">Passwort speichern</button>
+    </form>
+{% else %}
+    <h1>Link ungültig</h1>
+    <p>Der Link ist abgelaufen, wurde schon benutzt oder ist unvollständig.</p>
+    <p><a class="knopf" href="{{ url_for('bestaetigung_erneut') }}">Neue Bestätigungs-Mail</a>
+       <a class="knopf knopf-dezent" href="{{ url_for('passwort_vergessen') }}">Passwort zurücksetzen</a></p>
+{% endif %}
+</div>
+{% endblock %}

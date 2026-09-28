@@ -1,0 +1,26 @@
+{% extends "basis.html" %}
+{% block titel %}Import{% endblock %}
+{% block inhalt %}
+    <h1>✅ Export erkannt</h1>
+    <p class="hinweis">Das Programm hat automatisch erkannt, was in deiner Datei steckt:</p>
+    <div class="kacheln">
+        {% for name, anzahl in info.enthaelt.items() %}
+            <div class="kachel"><div class="wert">{{ anzahl }}</div><div class="titel">{{ name }}</div></div>
+        {% endfor %}
+    </div>
+    <div class="karte">
+        <h2>Wie geht's weiter?</h2>
+        <p>
+        {% if info.snapshot %}
+            <a class="knopf" href="{{ url_for('ergebnis', snapshot_id=info.snapshot) }}">👥 Follower-Auswertung ansehen</a>
+        {% endif %}
+        {% if info.enthaelt.get('Kommentare') %}
+            <a class="knopf knopf-gelb" href="{{ url_for('aktivitaet', name='kommentare') }}">💬 Kommentare prüfen ({{ info.neu_kommentare }} neu)</a>
+        {% endif %}
+        {% if info.enthaelt.get('Likes') %}
+            <a class="knopf knopf-dezent" href="{{ url_for('aktivitaet', name='likes') }}">❤️ Likes ansehen ({{ info.neu_likes }} neu)</a>
+        {% endif %}
+        </p>
+        <p class="hinweis" style="margin:0">Schon früher importierte Kommentare und Likes werden nicht doppelt gezählt.</p>
+    </div>
+{% endblock %}
