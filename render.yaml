@@ -14,9 +14,9 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ACCOUNTS_AKTIVIERT      # 1 = Konten an, 0 = aus
-        value: "1"
+        value: "0"
       - key: AUTO_CHECK_AKTIVIERT    # auf öffentlichen Servern besser aus
-        value: "1"
+        value: "0"
       - key: COOKIES_NUR_HTTPS
         value: "1"
       - key: BETREIBER_NAME
@@ -35,8 +35,8 @@ services:
         value: "aus"
       - key: KONTO_LOESCHEN_NACH_TAGEN
         value: "365"
-      - key: OEFFENTLICHE_URL        # z. B. https://deinname.onrender.com
-        sync: "https://follower-auswertung.onrender.com/"
+      - key: OEFFENTLICHE_URL
+        value: "https://follower-auswertung.onrender.com"
       - key: E_MAIL_BESTAETIGUNG
         value: "1"
       - key: SMTP_HOST              # leer = Testmodus (Mails nur im Log)
