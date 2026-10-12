@@ -1,0 +1,20 @@
+{% extends "basis.html" %}
+{% block titel %}Auswertung{% endblock %}
+{% block kopf %}
+    {# Für fetch()-Anfragen an /api/tresor (siehe web/static/tresor/speicher.js) #}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script type="module" src="{{ url_for('static', filename='tresor/app.js') }}"></script>
+{% endblock %}
+{% block inhalt %}
+    {#
+      Die eigentliche Oberfläche baut web/static/tresor/app.js im Browser auf.
+      Der Server liefert nur dieses Gerüst aus – er sieht keine Exporte und keine Listen.
+    #}
+    <div id="app"
+         data-angemeldet="{{ '1' if volle_funktionen else '0' }}"
+         data-konten-aktiv="{{ '1' if accounts_aktiviert and registrierung_offen else '0' }}"
+         data-registrieren-url="{{ url_for('registrieren') if accounts_aktiviert else '' }}"
+         data-anleitung-url="{{ url_for('anleitung') }}">
+        <noscript><div class="karte">Diese Seite wertet deine Daten direkt in deinem Browser aus und braucht dafür JavaScript.</div></noscript>
+    </div>
+{% endblock %}

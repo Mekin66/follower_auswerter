@@ -170,8 +170,9 @@ ANLEITUNGEN: list[Anleitung] = [
         ],
         tipps=[
             "Das Programm löscht nichts selbst auf Instagram. Dein Konto bleibt sicher.",
-            "Die Einschätzung ist eine einfache Regel-Prüfung (Wortlisten, Länge, Großbuchstaben) – keine KI. "
-            "Emojis und kurze Kommentare gelten als harmlos, lange und meinungsstarke als heikler.",
+            "Die Einschätzung macht ein kleines neuronales Netz, das direkt im Programm läuft (nichts geht ins "
+            "Internet). Es lernt aus deinen Entscheidungen: Nach ein paar Mal „Entfernen“/„Behalten“ sortiert es "
+            "ähnliche Kommentare so ein, wie du es tun würdest.",
             "Ironie, Insider und Zusammenhang erkennt das Programm nicht. Die Entscheidung triffst immer du.",
             "Fehlt der direkte Link zum Beitrag, führt der Link zum Profil des Accounts. Das Datum hilft beim Suchen.",
             "Schon entschiedene Einträge werden beim nächsten Mal übersprungen – außer du wählst „erneut“.",

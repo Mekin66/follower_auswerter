@@ -16,7 +16,8 @@ a = Analysis(
     ['../main.py'],
     pathex=['..'],
     binaries=[],
-    datas=[('../gui/logo.png', 'gui')],   # Logo im Fenster/Kopf
+    datas=[('../gui/logo.png', 'gui'),      # Logo im Fenster/Kopf
+           ('../core/daten', 'core/daten')],   # Kommentar-Netz (Gewichte + Trainingsbeispiele)
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

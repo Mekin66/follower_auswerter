@@ -27,8 +27,8 @@
                 {{ csrf() }}
                 {% if ist_kommentar %}
                     <h2>{{ anzahl }} eigene Kommentare durchgehen</h2>
-                    <p class="hinweis" style="margin-top:-6px">Die Einstufung beruht auf Wortlisten (Beleidigungen, Politik, Gewalt …), Länge und Schreibstil –
-                        keine KI. Emojis und kurze Kommentare gelten als harmlos, lange Texte werden immer angezeigt. Du entscheidest selbst.</p>
+                    <p class="hinweis" style="margin-top:-6px">Die Einstufung macht ein kleines neuronales Netz auf diesem Server (keine Weitergabe an Dritte).
+                        Es lernt aus deinen Entscheidungen dazu und nennt die Wörter, die den Ausschlag gegeben haben. Du entscheidest selbst.</p>
                     <label class="checkzeile"><input type="radio" name="filter" value="kritisch"><span>Nur kritische (Löschen empfohlen)</span></label>
                     <label class="checkzeile"><input type="radio" name="filter" value="riskant" checked><span>Kritische + zu prüfende <small>empfohlen – heikelste zuerst</small></span></label>
                     <label class="checkzeile"><input type="radio" name="filter" value="alle"><span>Alle Kommentare nacheinander</span></label>

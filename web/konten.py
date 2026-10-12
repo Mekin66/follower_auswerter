@@ -20,7 +20,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from core import history_store
 
+try:
+    from web import tresor
+except ImportError:  # pragma: no cover – Start als "python web/app.py"
+    import tresor  # type: ignore
+
 MIN_PASSWORT_LAENGE = 8
+NUTZUNG_PRIVAT = "privat"
+NUTZUNG_GESCHAEFTLICH = "geschaeftlich"
+NUTZUNG_TEXTE = {NUTZUNG_PRIVAT: "privat (eigene, persönliche Nutzung)",
+                 NUTZUNG_GESCHAEFTLICH: "geschäftlich (Unternehmen, Influencer, Agentur)"}
 _NAME_MUSTER = re.compile(r"^[A-Za-z0-9._-]{3,30}$")
 _EMAIL_MUSTER = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$")
 
@@ -52,12 +61,15 @@ def init_konten(conn: sqlite3.Connection) -> None:
         conn.execute("UPDATE konten SET letzter_login = erstellt_am WHERE letzter_login IS NULL")
     # Version 5: E-Mail + Freischaltung. DEFAULT 1 -> bestehende Konten bleiben nutzbar.
     for spalte, typ in (("email", "TEXT"), ("email_bestaetigt_am", "TEXT"), ("email_neu", "TEXT"),
-                        ("newsletter_am", "TEXT"), ("freigeschaltet", "INTEGER NOT NULL DEFAULT 1")):
+                        ("newsletter_am", "TEXT"), ("freigeschaltet", "INTEGER NOT NULL DEFAULT 1"),
+                        # Version 5 (Tresor): Zustimmung zum Auftragsverarbeitungsvertrag + Art der Nutzung
+                        ("avv_version", "TEXT"), ("avv_akzeptiert_am", "TEXT"), ("nutzung", "TEXT")):
         if spalte not in spalten:
             conn.execute(f"ALTER TABLE konten ADD COLUMN {spalte} {typ}")
     # Jede Adresse nur einmal (Groß-/Kleinschreibung egal); NULL (keine Adresse) darf mehrfach vorkommen
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_konten_email ON konten(email COLLATE NOCASE) "
                  "WHERE email IS NOT NULL")
+    tresor.init_tresor(conn)
     conn.commit()
 
 
@@ -103,10 +115,11 @@ def _passwort_pruefen_regeln(passwort: str, passwort2: str, wort: str = "Das Pas
 
 def registrieren(conn: sqlite3.Connection, benutzername: str, passwort: str, passwort2: str,
                  email: str | None = None, email_pflicht: bool = False, freigeschaltet: bool = True,
-                 newsletter: bool = False) -> int:
+                 newsletter: bool = False, nutzung: str | None = None, avv_version: str | None = None) -> int:
     """
     Legt ein Konto an und gibt die ID zurück.
     freigeschaltet=False -> Login erst nach Klick auf den Bestätigungs-Link.
+    avv_version gesetzt  -> der Nutzer hat bei der Registrierung dem AVV zugestimmt (Tresor-Modus).
     Wirft KontoFehler (Eingabe falsch) bzw. EmailVergeben (Adresse existiert schon).
     """
     benutzername = (benutzername or "").strip()
@@ -116,6 +129,8 @@ def registrieren(conn: sqlite3.Connection, benutzername: str, passwort: str, pas
         raise KontoFehler("Dieser Benutzername ist bereits vergeben.")
     email = email_normalisieren(email) if (email or "").strip() or email_pflicht else None
     _passwort_pruefen_regeln(passwort, passwort2)
+    if nutzung is not None and nutzung not in NUTZUNG_TEXTE:
+        raise KontoFehler("Bitte angeben, ob du die App privat oder geschäftlich nutzt.")
     if email:
         vorhanden = konto_per_email(conn, email)
         if vorhanden:
@@ -123,10 +138,10 @@ def registrieren(conn: sqlite3.Connection, benutzername: str, passwort: str, pas
     jetzt = _jetzt()
     try:
         cur = conn.execute(
-            "INSERT INTO konten (benutzername, passwort_hash, erstellt_am, email, freigeschaltet, newsletter_am) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO konten (benutzername, passwort_hash, erstellt_am, email, freigeschaltet, newsletter_am, "
+            "nutzung, avv_version, avv_akzeptiert_am) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (benutzername, generate_password_hash(passwort), jetzt, email, int(freigeschaltet),
-             jetzt if newsletter else None),
+             jetzt if newsletter else None, nutzung, avv_version, jetzt if avv_version else None),
         )
     except sqlite3.IntegrityError:                     # gleichzeitige Registrierung mit gleichem Namen
         raise KontoFehler("Dieser Benutzername ist bereits vergeben.") from None
@@ -155,11 +170,12 @@ def konto_info(conn: sqlite3.Connection, konto_id: int) -> dict | None:
     """Alle Konto-Angaben als dict (für die Konto-Seite und den Daten-Export)."""
     zeile = conn.execute(
         "SELECT id, benutzername, erstellt_am, letzter_login, email, email_bestaetigt_am, email_neu, "
-        "newsletter_am, freigeschaltet FROM konten WHERE id = ?", (konto_id,)).fetchone()
+        "newsletter_am, freigeschaltet, nutzung, avv_version, avv_akzeptiert_am FROM konten WHERE id = ?",
+        (konto_id,)).fetchone()
     if not zeile:
         return None
     namen = ("id", "benutzername", "erstellt_am", "letzter_login", "email", "email_bestaetigt_am", "email_neu",
-             "newsletter_am", "freigeschaltet")
+             "newsletter_am", "freigeschaltet", "nutzung", "avv_version", "avv_akzeptiert_am")
     return dict(zip(namen, zeile))
 
 
@@ -217,6 +233,21 @@ def email_aendern_anfordern(conn: sqlite3.Connection, konto_id: int, neue_email:
     conn.execute("UPDATE konten SET email_neu = ? WHERE id = ?", (neue_email, konto_id))
     conn.commit()
     return neue_email
+
+
+def avv_zustimmen(conn: sqlite3.Connection, konto_id: int, version: str, nutzung: str) -> None:
+    """Speichert die Zustimmung zum AVV (mit Version und Zeitpunkt – als Nachweis) und die Nutzungsart."""
+    if nutzung not in NUTZUNG_TEXTE:
+        raise KontoFehler("Bitte angeben, ob du die App privat oder geschäftlich nutzt.")
+    conn.execute("UPDATE konten SET avv_version = ?, avv_akzeptiert_am = ?, nutzung = ? WHERE id = ?",
+                 (version, _jetzt(), nutzung, konto_id))
+    conn.commit()
+
+
+def avv_aktuell(conn: sqlite3.Connection, konto_id: int, version: str) -> bool:
+    """Hat das Konto der AKTUELLEN Version des AVV zugestimmt?"""
+    zeile = conn.execute("SELECT avv_version FROM konten WHERE id = ?", (konto_id,)).fetchone()
+    return bool(zeile and zeile[0] == version)
 
 
 def newsletter_setzen(conn: sqlite3.Connection, konto_id: int, ja: bool) -> None:
@@ -282,6 +313,7 @@ def passwort_aendern(conn: sqlite3.Connection, konto_id: int, alt: str, neu: str
 def konto_loeschen(conn: sqlite3.Connection, konto_id: int) -> None:
     """Löscht das Konto und ALLE zugehörigen Daten (Recht auf Löschung, DSGVO Art. 17)."""
     history_store.besitzer_daten_loeschen(conn, besitzer_id(konto_id))
+    tresor.loeschen(conn, konto_id)
     conn.execute("DELETE FROM konten WHERE id = ?", (konto_id,))
     conn.commit()
 

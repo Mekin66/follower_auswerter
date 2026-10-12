@@ -1,0 +1,154 @@
+{% extends "basis.html" %}
+{% block titel %}Auftragsverarbeitungsvertrag{% endblock %}
+{% block inhalt %}
+    <h1>Vertrag zur Auftragsverarbeitung (AVV)</h1>
+    <p class="hinweis">nach Art. 28 DSGVO · Fassung {{ cfg.AVV_VERSION }}</p>
+
+    {% if konto and not zugestimmt %}
+    <form class="karte" method="post" action="{{ url_for('avv') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <h2>Zustimmung</h2>
+        <p class="hinweis" style="margin-top:-6px">Damit wir deine Listen in deinem Auftrag verschlüsselt speichern dürfen,
+            brauchen wir deine Zustimmung zu diesem Vertrag (Text unten).</p>
+        <fieldset class="nutzungsart">
+            <legend>Wofür nutzt du die App?</legend>
+            {% for wert, text in nutzung_texte.items() %}
+            <label class="checkzeile"><input type="radio" name="nutzung" value="{{ wert }}" required {% if konto.nutzung == wert %}checked{% endif %}>
+                <span>{{ text }}</span></label>
+            {% endfor %}
+        </fieldset>
+        <label class="checkzeile"><input type="checkbox" name="avv" value="1" required>
+            <span>Ich habe den Vertrag gelesen und stimme ihm zu.</span></label>
+        <button type="submit">Zustimmen</button>
+    </form>
+    {% elif konto %}
+    <div class="info">Du hast dieser Fassung am {{ konto.avv_akzeptiert_am[:10] }} zugestimmt
+        (Nutzung: {{ nutzung_texte.get(konto.nutzung, 'nicht angegeben') }}).
+        <form method="post" action="{{ url_for('avv') }}" class="nutzung-aendern">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="avv" value="1">
+            Nutzung ändern:
+            {% for wert, text in nutzung_texte.items() %}
+                <button type="submit" name="nutzung" value="{{ wert }}" class="klein knopf-dezent" {% if konto.nutzung == wert %}disabled{% endif %}>{{ wert }}</button>
+            {% endfor %}
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="karte avv-text">
+        {% if not cfg.BETREIBER_NAME or not cfg.HOSTER_NAME %}
+            <p class="rot">⚠ Vorlage noch nicht vollständig: BETREIBER_NAME, BETREIBER_ADRESSE, BETREIBER_EMAIL und HOSTER_NAME
+                setzen. Diese Vorlage ersetzt keine Rechtsberatung – vor dem Start anwaltlich prüfen lassen.</p>
+        {% endif %}
+
+        <h3>Vertragsparteien</h3>
+        <p><b>Verantwortlicher</b> („Nutzer“): die Person bzw. das Unternehmen, das unter dem jeweiligen Benutzerkonto
+           dieser Anwendung Daten speichert.<br>
+           <b>Auftragsverarbeiter</b> („Anbieter“): {{ cfg.BETREIBER_NAME or '[Name]' }}, {{ cfg.BETREIBER_ADRESSE or '[Anschrift]' }},
+           E-Mail: {{ cfg.BETREIBER_EMAIL or '[E-Mail]' }}.</p>
+        <p>Der Vertrag wird elektronisch geschlossen (Art. 28 Abs. 9 DSGVO), indem der Nutzer bei der Registrierung oder
+           auf dieser Seite zustimmt. Zeitpunkt und Fassung der Zustimmung werden gespeichert.</p>
+
+        <h3>§ 1 Gegenstand und Dauer</h3>
+        <p>(1) Der Anbieter stellt dem Nutzer Speicherplatz für einen <b>verschlüsselten Datenbestand</b> („Tresor“) bereit
+           und liefert ihn bei Abruf unverändert wieder aus. Mehr leistet der Anbieter in Bezug auf diese Daten nicht.<br>
+           (2) Der Vertrag gilt, solange das Benutzerkonto besteht. Er endet automatisch mit der Löschung des Kontos.</p>
+
+        <h3>§ 2 Art, Zweck und Umfang der Verarbeitung</h3>
+        <p>(1) Art der Verarbeitung: Speichern, Bereithalten, Ausliefern und Löschen (Art. 4 Nr. 2 DSGVO) eines Datenblocks,
+           der im Browser des Nutzers mit einem nur ihm bekannten Tresor-Passwort verschlüsselt wurde.<br>
+           (2) Zweck: Der Nutzer kann seine Listen geräteübergreifend und dauerhaft aufbewahren, um sie in seinem Browser
+           auszuwerten.<br>
+           (3) Die Auswertung (Vergleich von Listen, Markierungen, Entfolgen-Modus) findet <b>ausschließlich im Browser
+           des Nutzers</b> statt und ist nicht Gegenstand dieses Vertrags. Der Anbieter wertet den Tresor nicht aus,
+           erstellt keine Profile, verknüpft ihn nicht mit anderen Daten, nutzt ihn nicht für eigene Zwecke
+           (insbesondere nicht für Analysen, Werbung, Training von Modellen oder Verkauf) und gibt ihn nicht weiter.</p>
+
+        <h3>§ 3 Art der Daten und Kreis der Betroffenen</h3>
+        <p>(1) Art der Daten (vom Nutzer gewählt, für den Anbieter nicht einsehbar): Nutzernamen von Instagram- bzw.
+           TikTok-Accounts, Datum der Verbindung, eigene Markierungen und Notizlisten des Nutzers (z. B. „Freunde“,
+           „blockiert“), Bezeichnungen und Zeitpunkte der Auswertungen.<br>
+           (2) Betroffene: Personen, die dem Nutzer auf diesen Plattformen folgen, denen er folgt oder die er in seinen
+           Listen führt.<br>
+           (3) Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO) sind nicht Gegenstand der Verarbeitung. Der
+           Nutzer speichert keine solchen Daten im Tresor.</p>
+
+        <h3>§ 4 Weisungen</h3>
+        <p>(1) Der Anbieter verarbeitet die Daten nur auf dokumentierte Weisung des Nutzers (Art. 28 Abs. 3 lit. a DSGVO).
+           Weisungen erteilt der Nutzer durch die Bedienung der Anwendung (Speichern, Ändern, Herunterladen, Löschen) sowie
+           in Textform an die oben genannte E-Mail-Adresse.<br>
+           (2) Ist der Anbieter der Ansicht, dass eine Weisung gegen Datenschutzrecht verstößt, weist er den Nutzer
+           unverzüglich darauf hin (Art. 28 Abs. 3 Satz 3 DSGVO).<br>
+           (3) Ist der Anbieter gesetzlich zu einer Verarbeitung verpflichtet (z. B. behördliche Anordnung), teilt er dies
+           dem Nutzer vorher mit, sofern das Gesetz es nicht verbietet. Wegen der Verschlüsselung kann der Anbieter in
+           diesem Fall nur den verschlüsselten Block herausgeben.</p>
+
+        <h3>§ 5 Vertraulichkeit</h3>
+        <p>Der Anbieter setzt nur Personen ein, die zur Vertraulichkeit verpflichtet sind oder einer gesetzlichen
+           Verschwiegenheitspflicht unterliegen (Art. 28 Abs. 3 lit. b DSGVO).</p>
+
+        <h3>§ 6 Technische und organisatorische Maßnahmen (Art. 32 DSGVO)</h3>
+        <ul>
+            <li><b>Ende-zu-Ende-Verschlüsselung:</b> AES-256-GCM, Schlüssel per PBKDF2-SHA-256 (600 000 Runden) aus dem
+                Tresor-Passwort abgeleitet. Passwort und Schlüssel verlassen den Browser nie; der Anbieter kann den Inhalt
+                nicht entschlüsseln.</li>
+            <li><b>Formatprüfung:</b> Der Server nimmt nur Datenblöcke an, die dem verschlüsselten Format entsprechen.</li>
+            <li><b>Transportverschlüsselung:</b> ausschließlich HTTPS (TLS).</li>
+            <li><b>Zugriffsschutz:</b> Abruf nur nach Anmeldung mit dem Konto des Nutzers; Passwörter nur als Hash;
+                Sperre nach wiederholten Fehlversuchen; Schutz vor Cross-Site-Request-Forgery und durch eine strenge
+                Content-Security-Policy.</li>
+            <li><b>Keine Auswertung:</b> Auf dem Server laufen keine Programme, die Tresor-Inhalte lesen oder auswerten.</li>
+            <li><b>Datensparsamkeit und Löschung:</b> automatische Löschung von Konten nach
+                {% if cfg.KONTO_LOESCHEN_NACH_TAGEN %}{{ cfg.KONTO_LOESCHEN_NACH_TAGEN }} Tagen ohne Anmeldung{% else %}Kündigung{% endif %};
+                Backups werden spätestens nach {{ cfg.BACKUP_LOESCHFRIST_TAGE }} Tagen überschrieben.</li>
+            <li><b>Verfügbarkeit:</b> regelmäßige Datensicherung beim Hoster. Der Nutzer kann jederzeit eine eigene Sicherung
+                herunterladen.</li>
+        </ul>
+        <p>Der Anbieter darf die Maßnahmen an den Stand der Technik anpassen, solange das Schutzniveau nicht sinkt.</p>
+
+        <h3>§ 7 Unterauftragsverarbeiter</h3>
+        <p>(1) Der Nutzer genehmigt allgemein den Einsatz folgender Unterauftragsverarbeiter (Art. 28 Abs. 2 und 4 DSGVO):<br>
+           – {{ cfg.HOSTER_NAME or '[Hoster]' }}{% if cfg.HOSTER_SITZ %} ({{ cfg.HOSTER_SITZ }}){% endif %}: Betrieb des Servers
+           und Speicherung (nur verschlüsselte Blöcke).<br>
+           (2) Der Anbieter informiert den Nutzer vorab über beabsichtigte Änderungen (z. B. per E-Mail oder Hinweis in der
+           Anwendung). Der Nutzer kann innerhalb von 14 Tagen widersprechen; in diesem Fall kann er sein Konto samt Tresor
+           löschen.<br>
+           (3) Der Anbieter verpflichtet Unterauftragsverarbeiter vertraglich auf dieselben Datenschutzpflichten.</p>
+
+        <h3>§ 8 Unterstützung des Nutzers</h3>
+        <p>(1) Betroffenenrechte (Art. 12–23 DSGVO): Der Nutzer kann die Daten im Tresor jederzeit selbst einsehen,
+           berichtigen, exportieren und löschen. Wegen der Verschlüsselung kann der Anbieter keine Inhalte heraussuchen;
+           er leitet Anfragen, die ihn erreichen, unverzüglich an den Nutzer weiter.<br>
+           (2) Der Anbieter unterstützt den Nutzer bei den Pflichten aus Art. 32–36 DSGVO im Rahmen der ihm vorliegenden
+           Informationen und meldet ihm Verletzungen des Schutzes personenbezogener Daten unverzüglich, spätestens
+           innerhalb von 48 Stunden nach Kenntnis.</p>
+
+        <h3>§ 9 Löschung und Rückgabe</h3>
+        <p>Der Nutzer kann seinen Tresor jederzeit herunterladen (Rückgabe) und löschen. Mit Löschung des Tresors oder des
+           Kontos wird der Block sofort aus der Datenbank entfernt; in Datensicherungen ist er spätestens nach
+           {{ cfg.BACKUP_LOESCHFRIST_TAGE }} Tagen nicht mehr enthalten (Art. 28 Abs. 3 lit. g DSGVO).</p>
+
+        <h3>§ 10 Nachweise und Kontrollen</h3>
+        <p>Der Anbieter stellt dem Nutzer auf Anfrage die zum Nachweis der Pflichten aus Art. 28 DSGVO nötigen Informationen
+           zur Verfügung (z. B. diese Beschreibung der Maßnahmen, den Quellcode der Verschlüsselung, Verträge mit
+           Unterauftragsverarbeitern) und ermöglicht Überprüfungen nach angemessener Vorankündigung (Art. 28 Abs. 3 lit. h DSGVO).</p>
+
+        <h3>§ 11 Pflichten des Nutzers</h3>
+        <p>(1) Der Nutzer ist für die Rechtmäßigkeit der Verarbeitung der Daten verantwortlich, die er im Tresor speichert –
+           insbesondere bei geschäftlicher Nutzung für eine Rechtsgrundlage nach Art. 6 DSGVO und die Information der
+           Betroffenen.<br>
+           (2) Nutzt eine natürliche Person die Anwendung ausschließlich für persönliche oder familiäre Zwecke, gilt für sie
+           die DSGVO nach Art. 2 Abs. 2 lit. c nicht („Haushaltsausnahme“). Der Anbieter hält sich trotzdem an diesen
+           Vertrag (vgl. Erwägungsgrund 18 DSGVO).<br>
+           (3) Der Nutzer bewahrt sein Tresor-Passwort sorgfältig auf. Geht es verloren, kann der Anbieter den Tresor
+           nicht wiederherstellen.</p>
+
+        <h3>§ 12 Haftung und Schlussbestimmungen</h3>
+        <p>(1) Für die Haftung gilt Art. 82 DSGVO.<br>
+           (2) Bei Widersprüchen zu den Nutzungsbedingungen geht dieser Vertrag vor, soweit es um den Schutz
+           personenbezogener Daten geht.<br>
+           (3) Änderungen dieses Vertrags werden mit einer neuen Fassungsnummer veröffentlicht und erst nach erneuter
+           Zustimmung des Nutzers wirksam. Ohne Zustimmung kann der Tresor nur noch heruntergeladen oder gelöscht werden.<br>
+           (4) Sollte eine Bestimmung unwirksam sein, bleibt der Vertrag im Übrigen wirksam.</p>
+    </div>
+{% endblock %}

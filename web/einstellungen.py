@@ -34,7 +34,30 @@ def _bool(name: str, standard: bool) -> bool:
 
 # ============================ HIER UMSCHALTEN ============================
 ACCOUNTS_AKTIVIERT: bool = _bool("ACCOUNTS_AKTIVIERT", True)
+
+# BETRIEBSMODUS – welche Rolle spielt der Server? (siehe docs/handbuch/04_tresor_und_recht.md)
+#
+#   "tresor"     -> Der Server ist reiner Cloud-Speicher (Auftragsverarbeiter, Art. 28 DSGVO).
+#                   Auswertung, Vergleich und Entfolgen-Modus laufen komplett im Browser
+#                   (web/static/tresor/). Der Server speichert pro Konto nur einen im Browser
+#                   verschlüsselten Datenblock, den er selbst nicht lesen kann.
+#                   Standard für öffentliche Server.
+#   "klassisch"  -> Der Server liest die hochgeladenen Exporte selbst aus und speichert die
+#                   Listen im Klartext (Verhalten bis Version 4). Nur für den eigenen,
+#                   nicht öffentlichen Betrieb (z. B. lokal oder im Heimnetz) gedacht.
+BETRIEBSMODUS: str = os.environ.get("BETRIEBSMODUS", "tresor").strip().lower()
 # =========================================================================
+
+# ------------------------------------------------------------ Tresor-Modus
+# Maximale Größe eines verschlüsselten Tresors pro Konto (Kilobyte). 10 000 Follower
+# in 10 Auswertungen sind verschlüsselt etwa 3–4 MB.
+TRESOR_MAX_KB: int = int(os.environ.get("TRESOR_MAX_KB", "8192"))
+# Version des Auftragsverarbeitungsvertrags (AVV). Bei inhaltlichen Änderungen am Text
+# (templates/avv.html) hochzählen – dann müssen alle Nutzer neu zustimmen.
+AVV_VERSION: str = os.environ.get("AVV_VERSION", "2026-10")
+# Nach so vielen Tagen sind gelöschte Tresore auch aus Server-Backups verschwunden
+# (steht so im AVV – deine Backup-Rotation muss dazu passen, siehe docs/handbuch/05_launch.md).
+BACKUP_LOESCHFRIST_TAGE: int = int(os.environ.get("BACKUP_LOESCHFRIST_TAGE", "30"))
 
 # Dürfen sich neue Nutzer selbst registrieren? (Nur relevant, wenn Konten aktiv.)
 # Auf False setzen, wenn z. B. nur du und ausgewählte Leute Konten haben sollen.
@@ -70,7 +93,8 @@ SMTP_PASSWORT: str = os.environ.get("SMTP_PASSWORT", "")
 SMTP_VERSCHLUESSELUNG: str = os.environ.get("SMTP_VERSCHLUESSELUNG", "starttls")   # starttls | ssl | keine
 SMTP_ABSENDER: str = os.environ.get("SMTP_ABSENDER", "")          # z. B. "Follower-Auswertung <noreply@example.de>"
 
-# Automatische "Scheint deaktiviert"-Prüfung über instagram.com.
+# Automatische "Scheint deaktiviert"-Prüfung über instagram.com (nur BETRIEBSMODUS "klassisch":
+# im Tresor-Modus sieht der Server keine Nutzernamen und kann daher auch nichts prüfen).
 # Auf einem öffentlichen Server laufen ALLE Prüfungen über dieselbe Server-IP,
 # Instagram sperrt die dann sehr schnell. Für öffentliche Server eher False.
 AUTO_CHECK_AKTIVIERT: bool = _bool("AUTO_CHECK_AKTIVIERT", True)
@@ -125,7 +149,7 @@ def secret_key() -> str:
     datei = DATEN_ORDNER / ".secret_key"
     DATEN_ORDNER.mkdir(parents=True, exist_ok=True)
     if datei.exists():
-        return datei.read_text().strip()
+        return datei.read_text(encoding="utf-8").strip()
     schluessel = secrets.token_hex(32)
-    datei.write_text(schluessel)
+    datei.write_text(schluessel, encoding="utf-8")
     return schluessel

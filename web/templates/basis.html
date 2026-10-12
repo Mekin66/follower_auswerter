@@ -13,6 +13,20 @@
 <body>
     <nav>
         <a class="marke-link" href="{{ url_for('start') }}"><img src="{{ url_for('static', filename='logo.svg') }}" alt="" width="28" height="28"><span class="marke">Follower-Auswertung</span></a>
+        {% if tresor_modus %}
+        {# Tresor-Modus: Navigation der Browser-App (web/static/tresor/app.js wertet den #-Teil aus) #}
+        <div class="plattform-wahl" aria-label="Plattform wählen" id="plattform-wahl">
+            {% for wert, name in plattformen.items() %}
+                <button type="button" data-plattform="{{ wert.value }}">{{ name }}</button>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('start') }}#laden">Laden</a>
+        <a href="{{ url_for('start') }}#ergebnis">Ergebnis</a>
+        <a href="{{ url_for('start') }}#verlauf">Verlauf</a>
+        <a href="{{ url_for('start') }}#entfolgen">Entfolgen</a>
+        <a href="{{ url_for('start') }}#listen">Listen</a>
+        <a href="{{ url_for('start') }}#tresor">🔒 Tresor</a>
+        {% else %}
         <form action="{{ url_for('plattform_wechseln') }}" method="post" class="plattform-wahl" aria-label="Plattform wählen">
             <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <input type="hidden" name="zurueck" value="{{ url_for('start') }}">
@@ -26,6 +40,7 @@
         <a href="{{ url_for('aktivitaet', name='kommentare') }}">Kommentare</a>
         <a href="{{ url_for('aktivitaet', name='likes') }}">Likes</a>
         {% if volle_funktionen %}<a href="{{ url_for('listen') }}">Meine Listen</a>{% endif %}
+        {% endif %}
         <a href="{{ url_for('anleitung') }}">❓ Anleitung</a>
         {% if accounts_aktiviert %}
             <span class="rechts">
@@ -77,6 +92,7 @@
     <footer>
         <a href="{{ url_for('impressum') }}">Impressum</a> ·
         <a href="{{ url_for('datenschutz') }}">Datenschutz</a> ·
+        {% if tresor_modus and accounts_aktiviert %}<a href="{{ url_for('avv') }}">AV-Vertrag</a> ·{% endif %}
         {% if cookie_modus != 'aus' %}<a href="{{ url_for('cookies') }}">Cookie-Einstellungen</a> ·{% endif %}
         Kein offizielles Angebot von Instagram/Meta oder TikTok/ByteDance.
     </footer>

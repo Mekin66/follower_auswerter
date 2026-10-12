@@ -313,6 +313,7 @@ tests/ pytest für core + web
 - `core/archive_reader.lade_archiv()`: geht alle Dateien im ZIP durch und sammelt alles in
   `ArchivInhalt` (Follower/Following/Kommentare/Likes …). `enthaelt()` sagt, was gefunden wurde.
 - `core/kommentar_bewertung.py`: nachvollziehbare Regel-Bewertung (Wortlisten + Länge + Stil).
+  **Seit Version 5 ersetzt durch ein neuronales Netz** (`core/kommentar_netz.py`, siehe unten).
 - `core/aktivitaet.py`: `AktivitaetAblauf` – Durchgang Löschen/Behalten/Zurück wie beim Entfolgen.
 - Datenbank: Tabellen `kommentare`, `likes`, `aktivitaet_entscheidungen`.
 - Oberflächen: Web `/import`, `/aktivitaet/<kommentare|likes>`; Desktop `gui/aktivitaet_view.py`;
@@ -320,3 +321,35 @@ tests/ pytest für core + web
 - Web-Konten: `web/konten.py` (E-Mail, Freischaltung, Passwort-Reset), `web/mail.py` (SMTP),
   `web/verwaltung.py` (Konsolen-Befehle für den Betreiber). Bestätigungs- und Passwort-Links sind
   signierte Tokens (`itsdangerous`), keine zusätzliche Tabelle nötig.
+
+
+## Version 5: Tresor-Modus (Server als Auftragsverarbeiter)
+
+Ausführlich: [handbuch/04_tresor_und_recht.md](handbuch/04_tresor_und_recht.md) und
+[handbuch/02_code_erklaert.md](handbuch/02_code_erklaert.md).
+
+- `web/einstellungen.py`: `BETRIEBSMODUS` (`tresor` Standard / `klassisch`), `TRESOR_MAX_KB`, `AVV_VERSION`,
+  `BACKUP_LOESCHFRIST_TAGE`.
+- `web/tresor.py`: Tabelle `tresore(konto_id, inhalt, version, groesse, aktualisiert_am)`; nimmt nur Blöcke im
+  Format `FA1.<salt>.<iv>.<geheimtext>` an; Versionsnummer gegen gleichzeitiges Überschreiben (HTTP 409).
+- `web/app.py`: Im Tresor-Modus liefert `/` die Browser-App (mit Content-Security-Policy), `/api/tresor`
+  (GET/PUT/DELETE, CSRF per Header), `/avv`. Alle Routen, in denen der Server Listen liest, sind über
+  `KLASSISCHE_ENDPUNKTE` abgeschaltet; die automatische Prüfung ist aus.
+- `web/konten.py`: Spalten `nutzung`, `avv_version`, `avv_akzeptiert_am`; `avv_zustimmen()`, `avv_aktuell()`;
+  Kontolöschung löscht den Tresor.
+- `web/static/tresor/`: Browser-App ohne Fremdbibliotheken – `zip.js` (ZIP-Leser mit DecompressionStream),
+  `parser.js`/`auswertung.js` (Ports von `core/`), `krypto.js` (PBKDF2 + AES-GCM), `speicher.js`, `app.js`.
+- Tests: `tests/test_tresor.py`; `tests/test_js.py` startet `tests/js/tresor.test.mjs` mit Node und prüft,
+  dass JS- und Python-Parser denselben Export gleich lesen.
+- Nicht im Tresor-Modus: Kommentar-/Like-Modus und automatische Deaktiviert-Prüfung (Desktop/App haben sie weiter).
+
+### Kommentar-Bewertung per neuronalem Netz (Version 5)
+
+- `core/kommentar_netz.py`: Netz in reinem Python (keine neuen Abhängigkeiten – läuft auch auf Android):
+  Unicode-normalisierte Merkmale (Wörter, Zeichen-N-Gramme, Emojis, Stil) per Feature-Hashing,
+  eine versteckte Schicht (24, tanh), Softmax über harmlos/prüfen/kritisch.
+- Trainingsdaten `core/daten/kommentar_beispiele.tsv` (UTF-8, mehrsprachig), Gewichte `core/daten/kommentar_netz.json`.
+  Neu trainieren: `python -m core.kommentar_netz trainieren` (mit Kreuzvalidierung).
+- `core/aktivitaet.py::persoenliches_netz`: ab 5 eigenen Entscheidungen wird eine Kopie des Netzes mit
+  diesen nachtrainiert (nicht gespeichert).
+- Begründungen per Occlusion (Wort weglassen → Änderung der Log-Chance), Schnittstelle `bewerte()` unverändert.

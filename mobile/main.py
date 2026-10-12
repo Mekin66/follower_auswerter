@@ -681,8 +681,8 @@ class AktivitaetScreen(UnterScreen):
                                  TEXT_SCHWACH, groesse="13sp"))
             box.add_widget(label(f"Kritisch: {stat[KRITISCH]}   Prüfen: {stat[PRUEFEN]}   Harmlos: {stat[HARMLOS]}",
                                  fett=True, groesse="14sp"))
-            box.add_widget(label("Einstufung per Wortlisten, Länge und Schreibstil – keine KI. "
-                                 "Emojis und kurze Kommentare gelten als harmlos. Du entscheidest.",
+            box.add_widget(label("Einstufung per neuronalem Netz auf dem Handy – lernt aus deinen "
+                                 "Entscheidungen dazu. Du entscheidest.",
                                  TEXT_SCHWACH, groesse="12sp"))
             for text, wert, knopf in (("Nur kritische", FILTER_KRITISCH, "GefahrKnopf"),
                                       ("Kritische + zu prüfende (empfohlen)", FILTER_RISKANT, "WarnungKnopf"),
