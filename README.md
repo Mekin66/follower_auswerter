@@ -1,4 +1,4 @@
-# Follower-Auswertung (Version 4)
+# Follower-Auswertung (Version 5)
 
 Wertet den offiziellen Datenexport von **Instagram und TikTok** aus – oder selbst erstellte Listen: Wer folgt dir nicht zurück,
 wer ist neu dazugekommen oder weg, wer sind deine Freunde – ohne Login bei Instagram.
@@ -14,6 +14,20 @@ Drei Oberflächen, eine gemeinsame Logik (`core/`):
 > **Python-Version:** Desktop und Web laufen mit Python 3.10–3.14. Für die
 > Mobile-Version **Python 3.12 oder 3.13** verwenden – Kivy 2.3.1 hat (Stand
 > September 2026) keine Pakete für Python 3.14, die Installation schlägt dort fehl.
+
+## Neu in Version 5: Tresor-Modus
+
+- **Server als reiner, verschlüsselter Cloud-Speicher** (`BETRIEBSMODUS=tresor`, Standard):
+  Exporte werden **im Browser** gelesen und ausgewertet (`web/static/tresor/`), nichts wird hochgeladen.
+  Mit Konto speichert der Server pro Nutzer nur einen Ende-zu-Ende-verschlüsselten Block
+  (AES-256-GCM, Tresor-Passwort verlässt nie den Browser) – er kann ihn weder lesen noch auswerten.
+- **Auftragsverarbeitung (Art. 28 DSGVO):** AV-Vertrag unter `/avv`, Zustimmung + Angabe
+  „privat/geschäftlich“ bei der Registrierung, Nachweis mit Fassung und Zeitpunkt.
+- Konflikterkennung bei zwei Tabs/Geräten, verschlüsselte Sicherungsdatei, Klartext-Export,
+  Tresor-Passwort ändern, strenge Content-Security-Policy, Verwaltungsbefehle `tresore` und `avv`.
+- Der bisherige Ablauf (Server wertet aus) bleibt als `BETRIEBSMODUS=klassisch` für den privaten Betrieb.
+- **Handbuch** mit Code-Erklärung, Datenbank, Recht, Launch-Optionen und Python-Kurs:
+  [docs/handbuch/](docs/handbuch/README.md).
 
 ## Neu in Version 4
 
@@ -65,6 +79,7 @@ Drei Oberflächen, eine gemeinsame Logik (`core/`):
   wurde als Account-Liste mitgelesen; neuere Exporte ohne `value`-Feld wurden nicht erkannt;
   Android-App hatte keine Internet-Berechtigung; im Web sahen alle Besucher denselben Verlauf.
 
+Handbuch (Struktur, Code, Datenbank, Recht, Launch, Python-Kurs): [docs/handbuch/](docs/handbuch/README.md).
 Veröffentlichen: siehe [docs/VEROEFFENTLICHEN.md](docs/VEROEFFENTLICHEN.md).
 Aufbau des Codes: siehe [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md).
-Tests: `pip install pytest` → `python -m pytest tests`.
+Tests: `pip install pytest` → `python -m pytest tests` (die JavaScript-Tests laufen mit, wenn Node.js ≥ 20 installiert ist).

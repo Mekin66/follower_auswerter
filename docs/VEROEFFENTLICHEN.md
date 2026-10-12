@@ -1,5 +1,10 @@
 # Veröffentlichen – wie und wo
 
+> **Neu (Version 5):** Für den öffentlichen Betrieb `BETRIEBSMODUS=tresor` verwenden (Standard) –
+> der Server wertet dann nichts mehr selbst aus und speichert nur verschlüsselte Tresore.
+> Rechtliches Modell, Kosten und Schritt-für-Schritt-Anleitungen: [handbuch/04_tresor_und_recht.md](handbuch/04_tresor_und_recht.md)
+> und [handbuch/05_launch.md](handbuch/05_launch.md).
+
 Kurzfassung: **Zuerst die Web-Version öffentlich machen** (ohne Konten), danach
 optional die **Android-App** in Google Play. iOS erst später.
 

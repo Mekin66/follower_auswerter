@@ -320,3 +320,24 @@ tests/ pytest für core + web
 - Web-Konten: `web/konten.py` (E-Mail, Freischaltung, Passwort-Reset), `web/mail.py` (SMTP),
   `web/verwaltung.py` (Konsolen-Befehle für den Betreiber). Bestätigungs- und Passwort-Links sind
   signierte Tokens (`itsdangerous`), keine zusätzliche Tabelle nötig.
+
+
+## Version 5: Tresor-Modus (Server als Auftragsverarbeiter)
+
+Ausführlich: [handbuch/04_tresor_und_recht.md](handbuch/04_tresor_und_recht.md) und
+[handbuch/02_code_erklaert.md](handbuch/02_code_erklaert.md).
+
+- `web/einstellungen.py`: `BETRIEBSMODUS` (`tresor` Standard / `klassisch`), `TRESOR_MAX_KB`, `AVV_VERSION`,
+  `BACKUP_LOESCHFRIST_TAGE`.
+- `web/tresor.py`: Tabelle `tresore(konto_id, inhalt, version, groesse, aktualisiert_am)`; nimmt nur Blöcke im
+  Format `FA1.<salt>.<iv>.<geheimtext>` an; Versionsnummer gegen gleichzeitiges Überschreiben (HTTP 409).
+- `web/app.py`: Im Tresor-Modus liefert `/` die Browser-App (mit Content-Security-Policy), `/api/tresor`
+  (GET/PUT/DELETE, CSRF per Header), `/avv`. Alle Routen, in denen der Server Listen liest, sind über
+  `KLASSISCHE_ENDPUNKTE` abgeschaltet; die automatische Prüfung ist aus.
+- `web/konten.py`: Spalten `nutzung`, `avv_version`, `avv_akzeptiert_am`; `avv_zustimmen()`, `avv_aktuell()`;
+  Kontolöschung löscht den Tresor.
+- `web/static/tresor/`: Browser-App ohne Fremdbibliotheken – `zip.js` (ZIP-Leser mit DecompressionStream),
+  `parser.js`/`auswertung.js` (Ports von `core/`), `krypto.js` (PBKDF2 + AES-GCM), `speicher.js`, `app.js`.
+- Tests: `tests/test_tresor.py`; `tests/test_js.py` startet `tests/js/tresor.test.mjs` mit Node und prüft,
+  dass JS- und Python-Parser denselben Export gleich lesen.
+- Nicht im Tresor-Modus: Kommentar-/Like-Modus und automatische Deaktiviert-Prüfung (Desktop/App haben sie weiter).
