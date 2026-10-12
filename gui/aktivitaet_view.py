@@ -175,9 +175,9 @@ class KommentareFenster(_DurchgangFenster):
         for stufe, text in (("kritisch", "kritisch"), ("prüfen", "prüfen"), ("harmlos", "harmlos")):
             ttk.Label(zeile, text=f"{stat[stufe]} {text}", style=f"Stufe.{stufe}.TLabel").pack(side=tk.LEFT, padx=(0, 18))
         ttk.Label(zeile, text=f"· {len(vorher)} schon entschieden", style="SchwachKarte.TLabel").pack(side=tk.LEFT)
-        self._hinweis(karte, "Die Einstufung beruht auf Wortlisten (Beleidigungen, Politik, Gewalt …), Länge und "
-                             "Schreibstil – keine KI. Emojis und kurze Kommentare gelten als harmlos, lange Texte werden "
-                             "immer angezeigt. Du entscheidest bei jedem Kommentar selbst.")
+        self._hinweis(karte, "Die Einstufung macht ein kleines neuronales Netz, das auf diesem Computer läuft. Es "
+                             "lernt aus deinen Entscheidungen (Entfernen/Behalten) dazu und nennt die Wörter, die den "
+                             "Ausschlag gegeben haben. Ironie und Zusammenhang erkennt es nicht – du entscheidest selbst.")
         self.filter_var = tk.StringVar(value=FILTER_RISKANT)
         for wert, text in ((FILTER_KRITISCH, "Nur kritische (Löschen empfohlen)"),
                            (FILTER_RISKANT, "Kritische + zu prüfende (empfohlen)"),

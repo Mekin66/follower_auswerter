@@ -171,11 +171,12 @@ Python-Gegenstück für Desktop: `vergleiche_snapshots` in `gui/main_window.py::
 Den Kommentar-Modus (`core/kommentar_bewertung.py`, `core/aktivitaet.py`) nach JavaScript
 portieren, damit er auch im Tresor-Modus läuft.
 *Schritte:* 1. `parser.js`: `dateiArt` um `kommentare` erweitern und die JSON-Formen aus
-`instagram_export._json_eintrag` portieren. 2. `bewertung.js`: Wortlisten + `bewerte()`
-(Regex mit `u`-Flag, Lookbehind `(?<![a-zäöüß])` geht in modernen Browsern).
+`instagram_export._json_eintrag` portieren. 2. `netz.js`: Merkmale + Vorwärtsrechnung aus
+`core/kommentar_netz.py` portieren (Gewichte aus `kommentar_netz.json` laden; CRC32 und
+`normalize("NFKC")`/`toLocaleLowerCase` müssen exakt gleich rechnen – Paritätstest!).
 3. Tresor-Modell: `kommentare: {id: {...}}`, `kommentarEntscheidungen: {id: "entfernen"|"behalten"}`.
 4. Ansicht in `app.js`. 5. **Paritätstest** wie `test_js.py`: dieselben Kommentare in Python und
-JS bewerten, Punkte müssen gleich sein. 6. Datenschutz: Kommentartexte sind sensibler als
+JS bewerten, Wahrscheinlichkeiten müssen (bis auf Rundung) gleich sein. 6. Datenschutz: Kommentartexte sind sensibler als
 Nutzernamen – AVV § 3 (Art der Daten) ergänzen, `AVV_VERSION` hochzählen.
 
 ### G ★★★ – Mehrere Worker im Tresor-Modus

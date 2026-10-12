@@ -131,12 +131,42 @@ ohne Internet laufen (*Dependency Injection*).
 
 Im Tresor-Modus ist die Prüfung abgeschaltet (der Server kennt keine Namen).
 
-## 2.10 `core/kommentar_bewertung.py`
+## 2.10 Kommentar-Bewertung: `core/kommentar_netz.py` und `core/kommentar_bewertung.py`
 
-Regelbasierte Punktwertung: Wortlisten (`"sex*"` = Wortanfang), Länge, Großbuchstaben-Anteil,
-`!!`, Telefonnummern. Die Wortlisten werden **einmal beim Import** in Regex-Muster übersetzt
-(`_KATEGORIE_MUSTER`), nicht bei jedem Aufruf. Ergebnis: `Bewertung(stufe, punkte, gruende, treffer)`
-mit der berechneten Eigenschaft `empfehlung` (`@property`).
+Statt fester Wortlisten entscheidet ein **kleines neuronales Netz**, das an beschrifteten
+Beispielen trainiert wurde (`core/daten/kommentar_beispiele.tsv`, UTF-8). Ausführlich, mit
+Mathematik und Übungen: [Kurs-Lektion 13](python_kurs/13_neuronales_netz.md).
+
+```
+Text ─► Merkmale (Hashing, 16384 + 6 Stil) ─► 24 Neuronen (tanh) ─► 3 Klassen (Softmax)
+```
+
+| Teil | Funktion/Klasse | Aufgabe |
+|---|---|---|
+| Unicode | `normalisieren()`, `woerter()` | NFKC + `casefold()` – jede Sprache/Schrift; „𝐈𝐝𝐢𝐨𝐭“ → „idiot“, „GROẞ“ → „gross“, „idiooooot“ → „idioot“ |
+| Merkmale | `merkmale()`, `_platz()` | Wörter, Zeichen-3/4/5-Gramme, Emojis → per CRC32 (der UTF-8-Bytes) auf 16 384 Plätze; dazu Stil: Länge, Großbuchstaben, „!!“, Kontaktdaten, nur Emojis, Link |
+| Netz | `KommentarNetz` | `_vorwaerts()` rechnet dünn besetzt (nur vorhandene Merkmale), `wahrscheinlichkeiten()`, `risiko()` |
+| Training | `trainieren()`, `_schritt()` | Rückpropagation, Klassengewichte, Label-Smoothing, L2, sinkende Lernrate |
+| Prüfen | `kreuzvalidierung()` | ehrliche Trefferquote auf ungesehenen Beispielen (aktuell ca. 72 %, Raten = 33 %) |
+| Erklären | `erklaeren()` | jedes Wort einmal weglassen, Änderung in Log-Chancen messen → Anteil am Risiko |
+| Anpassen | `angepasst()` | Kopie mit den Entscheidungen des Nutzers nachtrainiert (in `core/aktivitaet.py::persoenliches_netz`, ab 5 Entscheidungen) |
+| Speichern | `speichern()`, `laden()` | JSON in UTF-8, nur benutzte Zeilen der ersten Schicht |
+
+`kommentar_bewertung.bewerte(text, netz=None, erklaeren=True)` liefert wie bisher
+`Bewertung(stufe, punkte, gruende, treffer)` – deshalb mussten Desktop, App und Web nicht
+geändert werden. Neu: `wahrscheinlichkeiten` und `erklaert`. Mit `erklaeren=False` geht es
+etwa 6× schneller (zum Sortieren tausender Kommentare); die Gründe berechnet
+`AktivitaetAblauf.bewertung()` erst, wenn ein Kommentar angezeigt wird.
+
+**Neu trainieren** nach Änderungen an den Beispielen:
+
+```bash
+python -m core.kommentar_netz trainieren          # ca. 30 s inkl. Kreuzvalidierung
+python -m core.kommentar_netz testen "Du bist so ein Idiot!!!"
+```
+
+Ein Test (`tests/test_kommentar_netz.py`) schlägt fehl, wenn die Beispiele geändert, aber nicht
+neu trainiert wurden (Fingerabdruck der TSV-Datei steht in der JSON).
 
 ## 2.11 `core/history_store.py`
 

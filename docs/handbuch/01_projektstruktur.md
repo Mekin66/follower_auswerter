@@ -30,7 +30,11 @@ follower_auswerter/
 │   ├── removal_session.py      Entfolgen-Modus (Ablauf, Kategorien, Zurück)
 │   ├── konto_pruefer.py        "Scheint deaktiviert"-Prüfung per HTTP (nur lokal/klassisch)
 │   ├── instagram_checker.py    Altes Modul, leitet auf konto_pruefer um
-│   ├── kommentar_bewertung.py  Regelbasierte Einstufung von Kommentaren
+│   ├── kommentar_bewertung.py  Einstufung von Kommentaren (nutzt das Netz, liefert Gründe)
+│   ├── kommentar_netz.py       ★ Neuronales Netz in reinem Python: Merkmale, Training, Erklärung
+│   ├── daten/
+│   │   ├── kommentar_beispiele.tsv   ★ Trainingsbeispiele (UTF-8, klasse<TAB>text)
+│   │   └── kommentar_netz.json       ★ trainierte Gewichte (UTF-8-JSON)
 │   ├── aktivitaet.py           Kommentar-/Like-Modus (Ablauf)
 │   ├── export.py               TXT/CSV-Berichte
 │   ├── anleitungen.py          Hilfetexte für alle drei Oberflächen

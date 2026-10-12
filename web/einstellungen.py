@@ -149,7 +149,7 @@ def secret_key() -> str:
     datei = DATEN_ORDNER / ".secret_key"
     DATEN_ORDNER.mkdir(parents=True, exist_ok=True)
     if datei.exists():
-        return datei.read_text().strip()
+        return datei.read_text(encoding="utf-8").strip()
     schluessel = secrets.token_hex(32)
-    datei.write_text(schluessel)
+    datei.write_text(schluessel, encoding="utf-8")
     return schluessel

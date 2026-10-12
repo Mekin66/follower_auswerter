@@ -1,0 +1,412 @@
+# Trainingsbeispiele für das Kommentar-Netz (core/kommentar_netz.py)
+# Format: klasse<TAB>text   – Datei ist UTF-8. Klassen: harmlos, prüfen, kritisch
+# "\n" im Text steht für einen Zeilenumbruch.
+#
+# harmlos  = kann bleiben (Lob, Emojis, Glückwünsche, Alltag)
+# prüfen   = je nach Situation heikel (Meinungen zu Politik/Religion/Gesellschaft, Party/Alkohol,
+#            Flirten, Lästern, sehr lange Texte, Spott)
+# kritisch = sollte eher weg (Beleidigungen, Drohungen, Diskriminierung, sexuelle Inhalte,
+#            Drogenhandel, Kontaktdaten/Doxxing, Bloßstellen anderer)
+#
+# Nach jeder Änderung neu trainieren:  python -m core.kommentar_netz trainieren
+harmlos	😍🔥
+harmlos	❤️❤️❤️
+harmlos	👏👏
+harmlos	😂😂😂
+harmlos	🙌✨
+harmlos	💯
+harmlos	🥰
+harmlos	😮‍💨🔥🔥
+harmlos	Wunderschön!
+harmlos	Mega Foto 😍
+harmlos	So schön hier!
+harmlos	Tolles Bild!
+harmlos	Wow, wo ist das?
+harmlos	Wo hast du die Jacke her?
+harmlos	Herzlichen Glückwunsch zum Geburtstag! 🎉
+harmlos	Alles Gute zum Geburtstag, feier schön 🎂
+harmlos	Happy birthday!! 🥳
+harmlos	Glückwunsch zur bestandenen Prüfung!
+harmlos	Gratuliere zum neuen Job 👏
+harmlos	Frohe Weihnachten euch allen 🎄
+harmlos	Frohes neues Jahr!
+harmlos	Gute Besserung ❤️
+harmlos	Vermisse dich!
+harmlos	Bis morgen beim Training 💪
+harmlos	Sieht lecker aus, Rezept bitte!
+harmlos	Das Essen sieht fantastisch aus
+harmlos	Hammer Aussicht
+harmlos	Der Hund ist so süß 🐶
+harmlos	Eure Katze ist zu niedlich 😻
+harmlos	Ihr seid so ein schönes Paar
+harmlos	Du siehst toll aus!
+harmlos	Steht dir richtig gut
+harmlos	Was für ein schöner Tag
+harmlos	Schöner Urlaub, genießt es!
+harmlos	Gute Reise ✈️
+harmlos	Viel Erfolg morgen!
+harmlos	Danke fürs Teilen
+harmlos	Danke dir 🙏
+harmlos	Haha genau so war es 😂
+harmlos	Ich lach mich weg 😂
+harmlos	Same 😅
+harmlos	Erinnert mich an unseren Ausflug letztes Jahr
+harmlos	Wann kommt das nächste Video?
+harmlos	Mehr davon bitte!
+harmlos	Starke Leistung 💪
+harmlos	Respekt, gut gemacht
+harmlos	Super Spiel gestern ⚽
+harmlos	Welche Kamera benutzt du?
+harmlos	Welcher Filter ist das?
+harmlos	Ich will auch dahin 😍
+harmlos	Nächstes Mal komme ich mit!
+harmlos	Kuchen sieht gut aus, hast du den selbst gebacken?
+harmlos	Ruf mich nachher mal an
+harmlos	Schreib mir mal wieder
+harmlos	Liebe Grüße an deine Mama
+harmlos	Wie geht's dir?
+harmlos	Das Konzert war der Wahnsinn 🎶
+harmlos	Bester Song!
+harmlos	Ich feier das Lied
+harmlos	Gemütlich 🍂
+harmlos	Traumhaft schön 🌅
+harmlos	Ok
+harmlos	Ja
+harmlos	Stimmt
+harmlos	Nice
+harmlos	Cool!
+harmlos	Krass 😮
+harmlos	Lol
+harmlos	Beautiful picture!
+harmlos	Love this ❤️
+harmlos	So cute!
+harmlos	Great shot!
+harmlos	Congrats, well deserved!
+harmlos	Where is this place?
+harmlos	Looks amazing 😍
+harmlos	Have fun!
+harmlos	Miss you guys
+harmlos	See you soon!
+harmlos	Thanks for sharing
+harmlos	Çok güzel olmuş 😍
+harmlos	Ellerine sağlık
+harmlos	İyi ki doğdun! 🎉
+harmlos	Qué bonito!
+harmlos	Felicidades 🎉
+harmlos	Magnifique !
+harmlos	Bravo, très belle photo
+harmlos	Bellissimo!
+harmlos	Prachtig!
+harmlos	Pięknie!
+harmlos	Красиво!
+harmlos	Ich hab heute auch Pizza gegessen 🍕
+harmlos	Mein Lieblingsort in der Stadt
+harmlos	Nächste Woche wieder?
+harmlos	Ich hoffe, euch geht es gut
+prüfen	Die Migration ist ein politisches Thema, über das man reden muss
+prüfen	Die Regierung macht alles falsch
+prüfen	Die Politik hat komplett versagt
+prüfen	Wer wählt denn bitte so eine Partei?
+prüfen	Ich wähle nächstes Mal was anderes, die da oben hören eh nicht zu
+prüfen	Die AfD hat in dem Punkt recht
+prüfen	Die Grünen ruinieren das Land
+prüfen	Die CDU ist auch nicht besser
+prüfen	SPD kann man vergessen
+prüfen	Ohne Merz wäre alles besser
+prüfen	Putin ist schuld an allem
+prüfen	Free Palestine 🇵🇸
+prüfen	Ich stehe an der Seite Israels 🇮🇱
+prüfen	Der Krieg in der Ukraine betrifft uns alle
+prüfen	Die Russen sind selbst schuld
+prüfen	Trump hat das richtig gemacht
+prüfen	Biden war eine Katastrophe
+prüfen	Zu viele Flüchtlinge, das kann so nicht weitergehen
+prüfen	Abschieben ist keine Lösung
+prüfen	Der Islam gehört nicht zu Deutschland
+prüfen	Religion ist Privatsache, aber das hier geht zu weit
+prüfen	Kirche ist doch eh nur noch Geldmacherei
+prüfen	Gendern ist einfach nur nervig
+prüfen	Diese ganze Woke-Debatte geht mir auf die Nerven
+prüfen	Ich lass mich nicht impfen, sorry
+prüfen	Corona war eine einzige Panikmache
+prüfen	Abtreibung ist Mord
+prüfen	Abtreibung ist ein Menschenrecht
+prüfen	Klimakleber gehören weggesperrt
+prüfen	Die Klimapolitik ruiniert die Wirtschaft
+prüfen	Steuern sind Diebstahl
+prüfen	Die Polizei hat da völlig übertrieben
+prüfen	Die Medien lügen doch sowieso
+prüfen	Wach endlich auf, die Wahrheit kommt raus
+prüfen	Typisch Ausländer
+prüfen	Das ist doch alles gekauft
+prüfen	Da war ich gestern so besoffen 🍻
+prüfen	Saufen bis zum Umfallen heute Abend
+prüfen	Ich war sowas von betrunken, kann mich an nix erinnern
+prüfen	Wer kommt mit kiffen?
+prüfen	Gestern viel zu viel gekifft 😵
+prüfen	Party bis 6 Uhr morgens, keine Ahnung mehr was passiert ist
+prüfen	Krank gemeldet und trotzdem am See 😎
+prüfen	Chef darf das nicht sehen 🤫
+prüfen	Ich hasse meinen Job so sehr
+prüfen	Mein Chef ist echt das Letzte
+prüfen	Die Lehrerin hat doch keine Ahnung
+prüfen	Na, wieder Single? 😏
+prüfen	Heiß 🔥🔥 schreib mir mal privat
+prüfen	Du bist so sexy
+prüfen	Was machst du heute Abend, Süße? 😘
+prüfen	Ich würde dich sofort daten
+prüfen	Na ob das Kleid so eine gute Idee war 🙄
+prüfen	Hast du zugenommen? 😅
+prüfen	Früher sahst du besser aus
+prüfen	Der Freund passt gar nicht zu dir
+prüfen	Ist die nicht mit dem anderen zusammen gewesen? 👀
+prüfen	Ich sag nur: wir wissen alle, was letzten Sommer passiert ist 👀
+prüfen	Das ist so peinlich, sorry
+prüfen	Cringe 😬
+prüfen	Wie kann man nur so naiv sein
+prüfen	Selten so einen Unsinn gelesen
+prüfen	Typisch Influencer, alles nur Fake
+prüfen	Alles nur gekaufte Follower
+prüfen	Kauft euch nicht diesen Mist, totale Abzocke
+prüfen	Die Firma bescheißt ihre Kunden
+prüfen	Never voting for them again, they ruined this country
+prüfen	Politicians are all corrupt
+prüfen	So drunk last night lol
+prüfen	Hot 🔥 dm me
+prüfen	Ich finde es unglaublich, wie hier mit dem Thema umgegangen wird. Seit Jahren sagen alle, dass sich etwas ändern muss, aber passiert ist gar nichts. Stattdessen werden die Probleme immer größer und keiner traut sich, ehrlich darüber zu reden. Ich bin es leid, immer nur leere Versprechen zu hören.
+prüfen	Sorry aber das muss jetzt mal gesagt werden: Ich verstehe nicht, warum hier alle so tun, als wäre alles in Ordnung. Wer sich wirklich mit dem Thema beschäftigt, merkt doch schnell, dass da vieles nicht stimmt und dass uns seit Jahren etwas vorgemacht wird. Denkt mal selbst nach!
+prüfen	Lange Geschichte, aber ich muss das loswerden: Erst sagt sie mir, dass alles okay ist, dann erzählt sie hinter meinem Rücken allen etwas anderes, und jetzt soll ich der Böse sein? Ich habe alles getan, was ich konnte, und das ist der Dank dafür. Ich bin echt enttäuscht von euch allen.
+prüfen	Ich habe lange überlegt, ob ich das schreibe. Aber was in der Familie gerade abgeht, ist einfach nicht mehr normal. Jeder redet über jeden, keiner sagt dem anderen die Wahrheit ins Gesicht und am Ende wundern sich alle, warum keiner mehr miteinander spricht.
+prüfen	Ich weiß nicht, ob es nur mir so geht, aber diese ganze Situation macht mich fertig. Arbeit, Familie, Geld, alles gleichzeitig, und dann noch die Nachrichten jeden Tag. Manchmal frage ich mich echt, wofür man das alles macht und ob es irgendwann besser wird.
+prüfen	Siyaset konuşmayalım ama bu hükümet bitti
+prüfen	El gobierno es un desastre total
+kritisch	Du bist so ein Idiot!!!
+kritisch	Was für ein Idiot
+kritisch	Du Vollidiot
+kritisch	Halt die Fresse
+kritisch	Halts Maul, keiner hat dich gefragt
+kritisch	Du dumme Kuh
+kritisch	Bist du dumm oder was?
+kritisch	Wie dumm kann man sein
+kritisch	Du bist so hässlich, lösch dich
+kritisch	Hässlich wie die Nacht 🤮
+kritisch	Fettes Schwein
+kritisch	Du Opfer
+kritisch	Du Lappen 😂
+kritisch	Was für ein Trottel
+kritisch	Du Depp
+kritisch	Arschloch
+kritisch	Du bist so ein Arsch
+kritisch	Verpiss dich
+kritisch	Wichser
+kritisch	Hurensohn
+kritisch	Du Schlampe
+kritisch	Billige Schlampe
+kritisch	Missgeburt
+kritisch	Bist du behindert?
+kritisch	Spast
+kritisch	Penner
+kritisch	Loser 😂😂
+kritisch	Schwachsinniger Vollpfosten
+kritisch	Niemand mag dich, merkst du das nicht?
+kritisch	Geh sterben
+kritisch	Ich bring dich um
+kritisch	Ich weiß, wo du wohnst
+kritisch	Wenn ich dich sehe, schlag ich dich zusammen
+kritisch	Pass bloß auf, wir kriegen dich
+kritisch	Dich sollte man abknallen
+kritisch	Verreck doch
+kritisch	Die gehören alle aufgehängt
+kritisch	Ausländer raus!
+kritisch	Scheiß Kanaken
+kritisch	Schwuchtel
+kritisch	Die sind doch alle Untermenschen
+kritisch	Typisch Frau, zurück in die Küche
+kritisch	Juden sind an allem schuld
+kritisch	Alle Muslime sind Terroristen
+kritisch	Heil Hitler
+kritisch	Sieg Heil 88
+kritisch	Schick Nudes 😏
+kritisch	Zeig mal mehr, ohne Klamotten 😈
+kritisch	Ich will dich ficken
+kritisch	Geile Titten
+kritisch	Mein OnlyFans Link ist in der Bio 🔞
+kritisch	Porno Link: www.xxx-beispiel.com
+kritisch	Wer will Gras? Schreib mir, liefere heute noch
+kritisch	Verkaufe Koks und Pillen, DM
+kritisch	Hab noch Ecstasy übrig, wer will?
+kritisch	Ruf mich an: 0176 12345678
+kritisch	Meine Nummer: +49 151 98765432, schreib per WhatsApp
+kritisch	Schreib mir an max.mustermann@beispiel.de
+kritisch	Die wohnt in der Hauptstraße 12, könnt ihr ja mal vorbeischauen
+kritisch	Hier ist ihre Handynummer, ruft sie alle an: 0160 1112223
+kritisch	Das ist die, die mit jedem schläft 😂
+kritisch	Alle mal herschauen, das ist der Typ, der seine Freundin betrogen hat
+kritisch	Ich hab Fotos von dir, die willst du nicht im Netz sehen
+kritisch	FICK DICH DU SCHEISS PENNER!!!
+kritisch	DU BIST SO DUMM ES TUT WEH!!!
+kritisch	Hahaha du Missgeburt, schäm dich
+kritisch	Scheiß Bullen, alle Polizisten sind Schweine
+kritisch	Ich hoffe, dein Flugzeug stürzt ab
+kritisch	You are so stupid
+kritisch	Shut up you idiot
+kritisch	Fuck you
+kritisch	Kill yourself
+kritisch	Ugly bitch
+kritisch	You're a retard
+kritisch	Go back to your country
+kritisch	Send nudes
+kritisch	I know where you live
+kritisch	Selling weed, dm me
+kritisch	Call me 555 123 4567
+kritisch	Sen bir aptalsın
+kritisch	Siktir git
+kritisch	Eres un idiota
+kritisch	Va te faire foutre
+kritisch	Idiota di merda
+kritisch	Ты идиот
+harmlos	Hab dich lieb
+harmlos	Ich hab dich so lieb ❤️
+harmlos	Du bist die Beste!
+harmlos	Du bist so lieb, danke
+harmlos	Du bist echt ein Schatz
+harmlos	Du hast so recht
+harmlos	Du schaffst das! 💪
+harmlos	Du bist so talentiert
+harmlos	Ich vermisse dich so
+harmlos	Ich freu mich auf dich
+harmlos	Freue mich für dich!
+harmlos	Ich denk an dich
+harmlos	Was für ein schönes Foto
+harmlos	Was für ein toller Abend
+harmlos	Was für ein süßer Hund
+harmlos	Was machst du am Wochenende?
+harmlos	Was ist das für ein Song?
+harmlos	Ein Traum!
+harmlos	Ein richtig schöner Tag mit euch
+harmlos	Die Farben sind wunderschön
+harmlos	Die Kleine ist so groß geworden
+harmlos	Die Aussicht ist der Hammer
+harmlos	Die Haare stehen dir super
+harmlos	Ihr seid die Besten
+harmlos	Ihr zwei 😍
+harmlos	Alle zusammen, wie schön
+harmlos	Haha du bist so witzig 😂
+harmlos	Bist du morgen auch da?
+harmlos	Bist du schon zurück?
+harmlos	So ein schöner Moment
+harmlos	Hahaha so wahr
+harmlos	Ich bin so stolz auf dich
+harmlos	Pass auf dich auf ❤️
+harmlos	Schreib mir, wenn du angekommen bist
+harmlos	You are amazing
+harmlos	You look great
+harmlos	I love you guys
+harmlos	What a great day
+harmlos	Seni seviyorum ❤️
+harmlos	Te quiero mucho
+prüfen	Was für ein Unsinn, sorry
+prüfen	Ihr wisst doch alle, wer gemeint ist 👀
+prüfen	Die da oben machen eh, was sie wollen
+prüfen	Du warst gestern aber ganz schön betrunken 😂
+prüfen	Na, wieder blau gemacht? 😏
+prüfen	Ich kann die neue Freundin von ihm echt nicht ab
+prüfen	Ganz ehrlich, das Outfit geht gar nicht
+prüfen	Der Lehrer ist so unfähig
+prüfen	Alle Politiker sind gleich
+prüfen	Wählt bloß nicht die Grünen
+kritisch	Du bist der dümmste Mensch, den ich kenne
+kritisch	Du kleine Ratte
+kritisch	Was für eine Missgeburt
+kritisch	Was für ein Penner
+kritisch	Die ist so eine Schlampe
+kritisch	Ihr seid alle Idioten
+kritisch	Ein richtiger Wichser
+kritisch	Halt doch einfach die Klappe, du Idiotin
+kritisch	Verpiss dich aus meiner Stadt
+kritisch	Du gehörst eingesperrt, du Psycho
+harmlos	Wann treffen wir uns?
+harmlos	Wir sehen uns am Samstag
+harmlos	Wir waren auch schon dort, total schön
+harmlos	Lass uns bald mal wieder was machen
+harmlos	Wir vermissen euch
+harmlos	Sind schon unterwegs 🚗
+harmlos	Sind das deine Schuhe? Wo gibt's die?
+harmlos	Wer kommt noch mit ins Kino?
+harmlos	Wer hat das Foto gemacht?
+harmlos	Ich bin dabei!
+harmlos	Ich auch 😄
+harmlos	Gleich geht's los
+harmlos	Heute ist so ein schöner Tag
+harmlos	Morgen wird es regnen ☔
+harmlos	Das Wetter ist herrlich
+harmlos	Endlich Wochenende 🙌
+harmlos	Zuhause ist es am schönsten
+harmlos	Guten Morgen zusammen ☀️
+harmlos	Gute Nacht 🌙
+harmlos	Schönen Feierabend
+harmlos	Lecker 😋
+harmlos	Mmmh, Kuchen 🍰
+harmlos	Kaffee geht immer ☕
+harmlos	Das Buch muss ich auch lesen
+harmlos	Der Film war richtig gut
+harmlos	Wann ist das Spiel?
+harmlos	Gehst du auch zum Festival?
+harmlos	Ich komme später nach
+harmlos	Kannst du mir das Rezept schicken?
+harmlos	Wie heißt das Restaurant?
+harmlos	Tolles Team 👏
+harmlos	Gut gemacht, Leute!
+harmlos	Ihr habt das super organisiert
+harmlos	Das Baby ist so süß 👶
+harmlos	Willkommen auf der Welt, Kleine!
+harmlos	Schöne Hochzeit, alles Gute euch beiden 💍
+harmlos	Güzel fotoğraf
+harmlos	Çok tatlısın
+harmlos	Harika görünüyorsun
+harmlos	Muy buena foto
+harmlos	Que linda!
+harmlos	Trop mignon
+harmlos	Super belle vue
+harmlos	Che bello!
+harmlos	Mooi gedaan
+harmlos	Super zdjęcie
+harmlos	Отличное фото
+harmlos	Great vibes
+harmlos	Can't wait!
+harmlos	Good morning ☀️
+prüfen	Der Bürgermeister ist ein Versager
+prüfen	Die Grünen sind schuld
+prüfen	Die Ampel ist schuld an allem
+prüfen	Typisch Beamte, nichts funktioniert
+prüfen	Die Bahn ist eine einzige Katastrophe, wer ist dafür verantwortlich?
+prüfen	Die Kirche sollte sich da raushalten
+prüfen	Die Ausländer bekommen alles geschenkt
+prüfen	Wer das wählt, hat nichts verstanden
+kritisch	Du Honk
+kritisch	Du Spast haha
+kritisch	Was für ein Spast
+kritisch	Du Vollpfosten
+kritisch	Du Hackfresse
+kritisch	Du Mongo
+kritisch	Du Idiotin
+kritisch	Ich töte dich
+kritisch	Ich mach dich kalt
+kritisch	Dich mach ich fertig
+kritisch	Wir töten euch alle
+kritisch	Ich stech dich ab
+kritisch	Du wirst es bereuen, ich finde dich
+kritisch	I will kill you
+kritisch	Seni öldüreceğim
+harmlos	Kommt ihr heute Abend?
+harmlos	Bis heute Abend!
+harmlos	Heute Abend grillen wir 🍖
+harmlos	Kommt gut nach Hause
+harmlos	Du bist wunderbar
+harmlos	Du bist ein toller Mensch
+harmlos	Du bist so stark
+harmlos	Du Glückspilz 🍀
+harmlos	Du Süße 🥰
+harmlos	Hast du am Dienstag Zeit?
+harmlos	Hast du Lust auf Kaffee?
+harmlos	Herzlichen Dank für die Einladung

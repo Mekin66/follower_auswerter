@@ -141,16 +141,23 @@ _FORMAT = re.compile(r"^FA1\.[A-Za-z0-9_-]{16,64}\.[A-Za-z0-9_-]{12,32}\.[A-Za-z
 Funktionen: `match` (am Anfang), `fullmatch` (ganzer Text), `search` (irgendwo), `findall`
 (alle als Liste), `finditer` (alle als Match-Objekte), `sub` (ersetzen), `split` (zerlegen).
 
-### Wörter mit Wortgrenzen (kommentar_bewertung.py)
+### Unicode richtig behandeln (kommentar_netz.py)
+
+`[A-Za-zäöü]` kennt nur deutsche Buchstaben. Für Kommentare in jeder Sprache nutzt das Projekt
+die Unicode-Fähigkeiten von Python:
 
 ```python
-def _muster(woerter):
-    teile = [re.escape(w[:-1]) + r"[a-zäöüß]*" if w.endswith("*") else re.escape(w) for w in woerter]
-    return re.compile(r"(?<![a-zäöüß])(" + "|".join(teile) + r")(?![a-zäöüß])", re.IGNORECASE)
+import unicodedata, re
+unicodedata.normalize("NFKC", "𝐈𝐝𝐢𝐨𝐭 ﬁne")    # 'Idiot fine' – Sonderschriften auf Normalform
+"GROẞE Straße".casefold()                      # 'grosse strasse' – stärker als lower()
+re.findall(r"\w+", "Ты идиот, çok güzel")      # \w ist in Python 3 Unicode: ['Ты', 'идиот', 'çok', 'güzel']
+"ä".isalpha(), "😍".isalpha()                    # (True, False)
+unicodedata.category("😍")                       # 'So' (Symbol, other) – so erkennt man Emojis
+"idiot".encode("utf-8")                          # Bytes – Grundlage für den stabilen Hash (zlib.crc32)
 ```
 
-`re.escape` macht Sonderzeichen in Nutzereingaben harmlos. Die Lookarounds verhindern, dass
-„Klasse“ das Wort „ass“ trifft.
+`re.escape` macht Sonderzeichen in Nutzereingaben harmlos, wenn man doch einmal ein Muster aus
+Text zusammensetzt.
 
 ## 8.8 HTML parsen
 

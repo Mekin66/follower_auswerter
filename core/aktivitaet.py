@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from core import history_store
 from core.instagram_export import Kommentar, Like
 from core.kommentar_bewertung import HARMLOS, KRITISCH, PRUEFEN, Bewertung, bewerte
+from core.kommentar_netz import KommentarNetz, standard_netz
 
 KOMMENTAR, LIKE = "kommentar", "like"
 ENTFERNEN, BEHALTEN = "entfernen", "behalten"
@@ -31,9 +32,25 @@ AKTIVITAET_URL = {
 
 FILTER_RISKANT, FILTER_KRITISCH, FILTER_ALLE = "riskant", "kritisch", "alle"
 
+# Ab so vielen eigenen Entscheidungen lernt das Netz die Vorlieben des Nutzers dazu
+MIN_EIGENE_ENTSCHEIDUNGEN = 5
+
+
+def persoenliches_netz(kommentare: list[Kommentar], vorher: dict[str, str]) -> KommentarNetz:
+    """
+    Das Standard-Netz, nachtrainiert mit den bisherigen Entscheidungen des Nutzers:
+    "Entfernen" zählt als kritisch, "Behalten" als harmlos. Unter
+    MIN_EIGENE_ENTSCHEIDUNGEN bleibt es beim Standard-Netz.
+    """
+    texte = {k.id: k.text for k in kommentare}
+    eigene = [(texte[i], KRITISCH if e == ENTFERNEN else HARMLOS) for i, e in vorher.items() if i in texte]
+    if len(eigene) < MIN_EIGENE_ENTSCHEIDUNGEN:
+        return standard_netz()
+    return standard_netz().angepasst(eigene)
+
 
 def kommentar_statistik(kommentare: list[Kommentar]) -> dict[str, int]:
-    zaehler = Counter(bewerte(k.text).stufe for k in kommentare)
+    zaehler = Counter(bewerte(k.text, erklaeren=False).stufe for k in kommentare)
     return {KRITISCH: zaehler[KRITISCH], PRUEFEN: zaehler[PRUEFEN], HARMLOS: zaehler[HARMLOS]}
 
 
@@ -67,19 +84,22 @@ class AktivitaetAblauf:
     entscheidungen: dict[str, str] = field(default_factory=dict)
     verlauf: list[str] = field(default_factory=list)
     _bewertungen: dict[str, Bewertung] = field(default_factory=dict)
+    _netz: KommentarNetz | None = None
 
     # ------------------------------------------------ Erzeugen
     @classmethod
     def fuer_kommentare(cls, besitzer: str, kommentare: list[Kommentar], vorher: dict[str, str],
                         filter: str = FILTER_RISKANT, erneut: bool = False) -> "AktivitaetAblauf":
         """filter: 'kritisch' (nur kritische), 'riskant' (kritisch + prüfen) oder 'alle'. Heikelste zuerst."""
-        bewertungen = {k.id: bewerte(k.text) for k in kommentare}
+        netz = persoenliches_netz(kommentare, vorher)
+        bewertungen = {k.id: bewerte(k.text, netz, erklaeren=False) for k in kommentare}
         erlaubt = {FILTER_KRITISCH: {KRITISCH}, FILTER_RISKANT: {KRITISCH, PRUEFEN}}.get(filter, {KRITISCH, PRUEFEN, HARMLOS})
         auswahl = [k for k in kommentare if bewertungen[k.id].stufe in erlaubt and (erneut or k.id not in vorher)]
         auswahl.sort(key=lambda k: (-bewertungen[k.id].punkte, -(k.zeitstempel or 0)))
         ablauf = cls(besitzer, KOMMENTAR, {k.id: k for k in kommentare}, [k.id for k in auswahl], dict(vorher),
                      uebersprungen=len(kommentare) - len(auswahl))
         ablauf._bewertungen = bewertungen
+        ablauf._netz = netz
         return ablauf
 
     @classmethod
@@ -99,7 +119,13 @@ class AktivitaetAblauf:
         return None
 
     def bewertung(self, eintrag) -> Bewertung | None:
-        return self._bewertungen.get(eintrag.id) if self.art == KOMMENTAR else None
+        """Bewertung MIT Begründung – erst beim Anzeigen berechnet (spart Zeit bei vielen Kommentaren)."""
+        if self.art != KOMMENTAR or eintrag is None:
+            return None
+        b = self._bewertungen.get(eintrag.id)
+        if b is not None and not b.erklaert:
+            b = self._bewertungen[eintrag.id] = bewerte(eintrag.text, self._netz)
+        return b
 
     def fortschritt(self) -> tuple[int, int]:
         return len(self.entscheidungen), len(self.reihenfolge)

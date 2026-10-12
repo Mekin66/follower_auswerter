@@ -40,7 +40,7 @@ pro `id` nur ein Kommentar übrig, die Reihenfolge bleibt erhalten.
 **Generator-Ausdruck** = Comprehension mit runden Klammern; erzeugt keine Liste im Speicher:
 
 ```python
-sum(1 for b in buchstaben if b.isupper())          # kommentar_bewertung.py
+sum(1 for z in buchstaben if z.isupper())          # kommentar_netz.py
 any(_TIKTOK_NAME.match(z) for z in zeilen)         # bricht beim ersten Treffer ab
 ```
 

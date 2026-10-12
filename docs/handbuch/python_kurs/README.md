@@ -21,6 +21,7 @@ Ausprobieren und endet mit Übungen samt Lösungen (zum Aufklappen).
 | 10 | [Web mit Flask](10_flask.md) | Routen, Templates, Sessions, JSON-API, CLI mit `argparse` | `web/app.py`, `verwaltung.py` |
 | 11 | [Threads und Sicherheit](11_threads_und_sicherheit.md) | `threading`, Locks, Passwort-Hashes, CSRF, Kryptografie | `app.py`, `konten.py`, `krypto.js` |
 | 12 | [Testen und erweitern](12_projekt_erweitern.md) | `pytest`, Fixtures, Mocking; Abschlussprojekte | `tests/` |
+| 13 | [Neuronales Netz von Grund auf](13_neuronales_netz.md) | Merkmale, Vorwärtsrechnung, Rückpropagation, Training, Erklärbarkeit | `kommentar_netz.py` |
 
 ## So arbeitest du damit
 

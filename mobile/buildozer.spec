@@ -5,7 +5,7 @@ package.name = followerauswertung
 # (z. B. de.deinname). Kann nach der ersten Veröffentlichung nicht mehr geändert werden.
 package.domain = org.example
 source.dir = .
-source.include_exts = py,kv,png,jpg,atlas,json
+source.include_exts = py,kv,png,jpg,atlas,json,tsv
 source.exclude_dirs = __pycache__,bin,.buildozer
 version = 4.0.0
 

@@ -26,6 +26,9 @@ Drei Oberflächen, eine gemeinsame Logik (`core/`):
 - Konflikterkennung bei zwei Tabs/Geräten, verschlüsselte Sicherungsdatei, Klartext-Export,
   Tresor-Passwort ändern, strenge Content-Security-Policy, Verwaltungsbefehle `tresore` und `avv`.
 - Der bisherige Ablauf (Server wertet aus) bleibt als `BETRIEBSMODUS=klassisch` für den privaten Betrieb.
+- **Kommentar-Bewertung per neuronalem Netz** statt Wortlisten: erkennt Abwandlungen, Tippfehler,
+  Sonderschriften und andere Sprachen (Unicode/UTF-8), lernt aus deinen Entscheidungen dazu und nennt
+  die ausschlaggebenden Wörter. Reines Python, keine neuen Abhängigkeiten.
 - **Handbuch** mit Code-Erklärung, Datenbank, Recht, Launch-Optionen und Python-Kurs:
   [docs/handbuch/](docs/handbuch/README.md).
 
