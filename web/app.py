@@ -327,6 +327,20 @@ def create_app(**ueberschreiben) -> Flask:
         tresor.loeschen(db(), konto_id())
         return _api_json({"geloescht": True})
 
+    # Das Kommentar-Netz läuft im Tresor-Modus im Browser (web/static/tresor/netz.js). Der Browser
+    # holt sich dafür nur die Gewichte und die Grund-Beispiele – es werden keine Nutzerdaten geschickt.
+    NETZ_DATEIEN = {"kommentar_netz.json": "application/json", "kommentar_beispiele.tsv": "text/plain"}
+
+    @app.route("/netz/<datei>")
+    def netz_datei(datei: str):
+        if datei not in NETZ_DATEIEN:
+            abort(404)
+        from flask import send_from_directory
+        from core.kommentar_netz import DATEN_ORDNER
+        antwort = send_from_directory(DATEN_ORDNER, datei, mimetype=NETZ_DATEIEN[datei], max_age=86400)
+        antwort.headers["Content-Type"] = f"{NETZ_DATEIEN[datei]}; charset=utf-8"
+        return antwort
+
     @app.route("/avv", methods=["GET", "POST"])
     def avv():
         """Auftragsverarbeitungsvertrag anzeigen – und (angemeldet) zustimmen."""
@@ -598,7 +612,7 @@ def create_app(**ueberschreiben) -> Flask:
         snapshot = snapshot_oder_404(snapshot_id)
         liste = _freunde(snapshot)
         if format == "csv":
-            return Response("﻿" + freunde_csv(liste), mimetype="text/csv",
+            return Response("\ufeff" + freunde_csv(liste), mimetype="text/csv",
                             headers={"Content-Disposition": "attachment; filename=freunde.csv"})
         if format == "txt":
             return Response(namensliste_text("Freunde", [f.username for f in liste]), mimetype="text/plain",

@@ -54,7 +54,7 @@ BETRIEBSMODUS: str = os.environ.get("BETRIEBSMODUS", "tresor").strip().lower()
 TRESOR_MAX_KB: int = int(os.environ.get("TRESOR_MAX_KB", "8192"))
 # Version des Auftragsverarbeitungsvertrags (AVV). Bei inhaltlichen Änderungen am Text
 # (templates/avv.html) hochzählen – dann müssen alle Nutzer neu zustimmen.
-AVV_VERSION: str = os.environ.get("AVV_VERSION", "2026-10")
+AVV_VERSION: str = os.environ.get("AVV_VERSION", "2026-10b")
 # Nach so vielen Tagen sind gelöschte Tresore auch aus Server-Backups verschwunden
 # (steht so im AVV – deine Backup-Rotation muss dazu passen, siehe docs/handbuch/05_launch.md).
 BACKUP_LOESCHFRIST_TAGE: int = int(os.environ.get("BACKUP_LOESCHFRIST_TAGE", "30"))

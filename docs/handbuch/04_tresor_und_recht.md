@@ -114,9 +114,12 @@ und den **Klartext-Export** unter „Tresor“.
   großen Anbietern). Gegenmittel: Quellcode offenlegen, Änderungen nachvollziehbar halten.
 - **Metadaten** sieht der Server: Größe des Tresors, Zeitpunkt der Speicherung, IP-Adresse.
   Diese stehen in der Datenschutzerklärung.
-- **Kommentar-/Like-Modus** gibt es im Tresor-Modus (noch) nicht – nur Follower-Funktionen.
-  Desktop- und Mobile-App können ihn weiterhin (lokal). Erweiterung: siehe
-  [Python-Kurs, Lektion 12](python_kurs/12_projekt_erweitern.md).
+- **Kommentar-/Like-Modus** läuft auch im Tresor-Modus komplett im Browser: Das neuronale Netz
+  (`netz.js`) rechnet mit denselben Gewichten wie die Python-Version; der Server liefert nur die
+  Gewichte (`/netz/kommentar_netz.json`) aus. Kommentartexte liegen – verschlüsselt – im Tresor.
+  Weil der Tresor dadurch auch Kommentare enthalten kann, nennt der AVV sie in § 3 (Fassung `2026-10b`).
+- **Automatische „Scheint deaktiviert“-Prüfung** gibt es im Tresor-Modus nicht (der Server müsste
+  dafür Nutzernamen kennen). Desktop- und Mobile-App haben sie weiterhin.
 - **ZIP64** (Exporte > 4 GB) liest der Browser-Leser nicht. Bei Instagram nur
   „Follower und gefolgte Personen“ exportieren.
 

@@ -70,6 +70,8 @@ follower_auswerter/
 │           ├── auswertung.js   Datenmodell + Logik (Port von diff_engine, freunde, removal_session)
 │           ├── parser.js       Export-Leser (Port von parser, txt_format, tiktok_parser, archive_reader)
 │           ├── zip.js          ZIP-Leser ohne Bibliothek
+│           ├── netz.js         ★ Kommentar-Netz im Browser (Port von core/kommentar_netz.py)
+│           ├── aktivitaet.js   ★ Kommentar-/Like-Modus (Port von core/aktivitaet.py)
 │           ├── krypto.js       PBKDF2 + AES-256-GCM
 │           └── speicher.js     Kommunikation mit /api/tresor
 │

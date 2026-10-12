@@ -15,7 +15,13 @@ from pathlib import Path
 import pytest
 
 from conftest import PROJEKT, export_zip
+from core import kommentar_netz
 from core.archive_reader import lade_export
+from test_core import _gemischtes_zip
+
+NETZ_TEXTE = ["😍🔥", "Du bist so ein Idiot!!!", "𝐈𝐝𝐢𝐨𝐭", "Die Migration ist ein politisches Thema", "x" * 320,
+              "Was für ein dummer Trottel", "Ruf mich an: 0176 12345678", "GROẞE Straße!!", "Ты идиот",
+              "Çok güzel olmuş 😍", "idiooooot", "", "Schöne Grüße an alle 👋 www.beispiel.de"]
 
 NODE = shutil.which("node")
 
@@ -41,7 +47,17 @@ def test_js_logik_und_gleiches_ergebnis_wie_python(tmp_path, art):
     py = lade_export(io.BytesIO(roh), "export.zip")
     erwartet = {"plattform": py.plattform.value, "follower": py.follower, "following": py.following,
                 "blockiert": py.blockiert, "enge_freunde": py.enge_freunde}
-    umgebung = {**os.environ, "FA_TEST_ZIP": str(pfad), "FA_TEST_ERWARTET": json.dumps(erwartet)}
+    netz = kommentar_netz.standard_netz()
+    netz_erwartet = [{"text": t, "p": netz.wahrscheinlichkeiten(t),
+                      "top": (netz.erklaeren(t) or [[None]])[0][0] if t else None} for t in NETZ_TEXTE]
+    akt_pfad = tmp_path / "aktivitaet.zip"
+    akt_pfad.write_bytes(_gemischtes_zip())
+    akt = lade_export(io.BytesIO(_gemischtes_zip()))
+    akt_erwartet = {"kommentare": [vars(k) for k in akt.kommentare], "likes": [vars(l) for l in akt.likes],
+                    "follower": akt.follower}
+    umgebung = {**os.environ, "FA_TEST_ZIP": str(pfad), "FA_TEST_ERWARTET": json.dumps(erwartet),
+                "FA_TEST_NETZ": json.dumps(netz_erwartet), "FA_TEST_AKT_ZIP": str(akt_pfad),
+                "FA_TEST_AKT_ERWARTET": json.dumps(akt_erwartet)}
     lauf = subprocess.run([NODE, "--test", str(Path("tests") / "js" / "tresor.test.mjs")], cwd=PROJEKT, env=umgebung,
                           capture_output=True, text=True, timeout=120)
     assert lauf.returncode == 0, lauf.stdout + lauf.stderr

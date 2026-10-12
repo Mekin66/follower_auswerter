@@ -87,6 +87,6 @@ export class ZipLeser {
   }
 
   async text(eintrag) {
-    return new TextDecoder("utf-8").decode(await this.lesen(eintrag)).replace(/^﻿/, "");
+    return new TextDecoder("utf-8").decode(await this.lesen(eintrag)).replace(/^\uFEFF/, "");
   }
 }

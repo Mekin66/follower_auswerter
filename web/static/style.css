@@ -374,3 +374,8 @@ fieldset.nutzungsart legend { font-weight: 600; padding: 0 6px; }
 .nutzung-aendern { display: inline; margin-left: 6px; }
 details summary { cursor: pointer; margin-top: 10px; }
 .speicher-status { font-size: 0.85em; color: #5b6570; text-align: right; margin: -6px 0 6px; min-height: 1em; }
+.kommentar-text mark { background: #fde68a; padding: 0 2px; border-radius: 3px; }
+.tabelle-scroll { max-height: 320px; overflow: auto; margin-bottom: 14px; }
+.tabelle { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.tabelle th { text-align: left; color: var(--text-schwach, #5b6570); padding: 6px 4px; }
+.tabelle td { border-top: 1px solid var(--rand, #e2e6ea); padding: 6px 4px; }

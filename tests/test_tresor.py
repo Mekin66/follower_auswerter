@@ -180,3 +180,18 @@ def test_datenschutz_und_avv_seite_beschreiben_tresor(tmp_path):
 def test_auto_check_nur_im_klassischen_modus(tmp_path, modus):
     app = _app(tmp_path, BETRIEBSMODUS=modus, AUTO_CHECK_AKTIVIERT=True)
     assert app.config["APP_EINSTELLUNGEN"]["AUTO_CHECK_AKTIVIERT"] is (modus == "klassisch")
+
+
+def test_netz_dateien_fuer_den_browser(tmp_path):
+    """Die Browser-App lädt Gewichte und Beispiele des Kommentar-Netzes – UTF-8, nur diese zwei Dateien."""
+    c = _app(tmp_path).test_client()
+    r = c.get("/netz/kommentar_netz.json")
+    assert r.status_code == 200 and "charset=utf-8" in r.headers["Content-Type"]
+    assert r.json["dim"] > 0
+    r = c.get("/netz/kommentar_beispiele.tsv")
+    assert r.status_code == 200 and "😍" in r.get_data(as_text=True)
+    assert c.get("/netz/../../web/einstellungen.py").status_code == 404
+    assert c.get("/netz/einstellungen.py").status_code == 404
+    html = c.get("/").get_data(as_text=True)
+    assert "#kommentare" in html and "#likes" in html
+    assert "Kommentare" in c.get("/avv").get_data(as_text=True)

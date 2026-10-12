@@ -166,18 +166,18 @@ Nach dem Laden eines Exports automatisch mit dem vorherigen vergleichen und oben
 „+3 neue Follower, −2 entfolgt“. Logik: `A.vergleichen(vorletzter, neuester)`.
 Python-Gegenstück für Desktop: `vergleiche_snapshots` in `gui/main_window.py::auswerten` aufrufen.
 
-### F ★★★ – Kommentar-Modus im Tresor
+### F ★★★ – Eigene Entscheidungen dauerhaft lernen
 
-Den Kommentar-Modus (`core/kommentar_bewertung.py`, `core/aktivitaet.py`) nach JavaScript
-portieren, damit er auch im Tresor-Modus läuft.
-*Schritte:* 1. `parser.js`: `dateiArt` um `kommentare` erweitern und die JSON-Formen aus
-`instagram_export._json_eintrag` portieren. 2. `netz.js`: Merkmale + Vorwärtsrechnung aus
-`core/kommentar_netz.py` portieren (Gewichte aus `kommentar_netz.json` laden; CRC32 und
-`normalize("NFKC")`/`toLocaleLowerCase` müssen exakt gleich rechnen – Paritätstest!).
-3. Tresor-Modell: `kommentare: {id: {...}}`, `kommentarEntscheidungen: {id: "entfernen"|"behalten"}`.
-4. Ansicht in `app.js`. 5. **Paritätstest** wie `test_js.py`: dieselben Kommentare in Python und
-JS bewerten, Wahrscheinlichkeiten müssen (bis auf Rundung) gleich sein. 6. Datenschutz: Kommentartexte sind sensibler als
-Nutzernamen – AVV § 3 (Art der Daten) ergänzen, `AVV_VERSION` hochzählen.
+Im Moment wird das Netz bei jedem Durchgang neu aus den eigenen Entscheidungen nachtrainiert
+(`persoenliches_netz` in Python, `persoenlichesNetz` in `app.js`) und danach verworfen.
+Speichere stattdessen nur die **Differenz** der Gewichte zum Standard-Netz (Desktop: in einer
+Tabelle `netz_anpassung(besitzer, json)`; Tresor: als Feld im verschlüsselten Tresor) und lade sie
+beim nächsten Mal. *Hinweise:* Lektion 13.8 (`angepasst`), Kapitel 3.6 (Tabelle anlegen).
+Achte darauf, dass die Differenz klein bleibt (nur geänderte Zeilen von W1 speichern) und dass
+ein neu trainiertes Standard-Netz alte Differenzen ungültig macht (Fingerabdruck mitspeichern).
+*So wurde der Kommentar-Modus selbst in den Browser gebracht:* `web/static/tresor/netz.js`,
+`aktivitaet.js` und der Paritätstest in `tests/test_js.py` sind ein gutes Vorbild für jeden Port
+von Python nach JavaScript.
 
 ### G ★★★ – Mehrere Worker im Tresor-Modus
 

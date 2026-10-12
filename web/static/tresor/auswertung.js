@@ -11,11 +11,15 @@
 //     instagram: {
 //       snapshots:    [{id, erstellt_am, label, follower: {name: datum}, following: {name: datum}}],
 //       markierungen: {name: {m: "behalten"|"entfernt"|"deaktiviert", am: ISO-Zeit}},
-//       listen:       {freunde: {name: ISO-Zeit}, blockiert_von_mir: {...}, blockiert_mich: {...}}
+//       listen:       {freunde: {name: ISO-Zeit}, blockiert_von_mir: {...}, blockiert_mich: {...}},
+//       aktivitaet:   {kommentare: {id: {...}}, likes: {id: {...}},
+//                      entscheidungen: {kommentar: {id: "entfernen"|"behalten"}, like: {...}}}
 //     },
 //     tiktok: { ...gleich... }
 //   }
 // }
+
+import { leereAktivitaet } from "./aktivitaet.js";
 
 export const FORMAT = 1;
 export const PLATTFORMEN = { instagram: "Instagram", tiktok: "TikTok" };
@@ -41,7 +45,8 @@ export const jetzt = () => new Date().toISOString().slice(0, 19);
 
 // ---------------------------------------------------------------- Datenmodell
 export function leererBereich() {
-  return { snapshots: [], markierungen: {}, listen: { freunde: {}, blockiert_von_mir: {}, blockiert_mich: {} } };
+  return { snapshots: [], markierungen: {}, listen: { freunde: {}, blockiert_von_mir: {}, blockiert_mich: {} },
+           aktivitaet: leereAktivitaet() };
 }
 
 export function leererTresor() {
@@ -59,6 +64,12 @@ export function normalisieren(daten) {
     b.markierungen ??= {};
     b.listen ??= {};
     for (const l of Object.keys(LISTEN)) b.listen[l] ??= {};
+    b.aktivitaet ??= leereAktivitaet();               // Tresore vor dem Kommentar-Modus
+    b.aktivitaet.kommentare ??= {};
+    b.aktivitaet.likes ??= {};
+    b.aktivitaet.entscheidungen ??= {};
+    b.aktivitaet.entscheidungen.kommentar ??= {};
+    b.aktivitaet.entscheidungen.like ??= {};
   }
   daten.format = FORMAT;
   return daten;
@@ -215,7 +226,7 @@ export function freundeCsv(freunde, plattform) {
   const profil = (n) => plattform === "tiktok" ? `https://www.tiktok.com/@${n}` : `https://www.instagram.com/${n}/`;
   const zeilen = [["username", "quelle", "folgt_mir_seit", "ich_folge_seit", "profil"].join(";")];
   for (const f of freunde) zeilen.push([f.username, f.quelle, f.folgtMirSeit, f.ichFolgeSeit, profil(f.username)].join(";"));
-  return "﻿" + zeilen.join("\r\n") + "\r\n";
+  return "\uFEFF" + zeilen.join("\r\n") + "\r\n";
 }
 
 export function profilUrl(plattform, name) {
