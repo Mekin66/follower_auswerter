@@ -7,6 +7,8 @@ Verwaltung für den Betreiber – auf dem Server in der Konsole ausführen.
     python -m web.verwaltung emails --csv adressen.csv
     python -m web.verwaltung loeschen BENUTZERNAME  # Konto samt Daten löschen
     python -m web.verwaltung mailtest DEINE@ADRESSE # prüft die SMTP-Einstellungen
+    python -m web.verwaltung tresore                # Größe/Stand der Tresore (OHNE Inhalte)
+    python -m web.verwaltung avv                    # wer hat welcher AVV-Fassung zugestimmt
 
 Mit Docker:  docker compose exec web python -m web.verwaltung konten
 
@@ -23,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from web import einstellungen, konten, mail  # noqa: E402
+from web import einstellungen, konten, mail, tresor  # noqa: E402
 
 
 def _verbindung() -> sqlite3.Connection:
@@ -76,6 +78,27 @@ def befehl_mailtest(args) -> None:
     print("Gesendet.")
 
 
+def befehl_tresore(_args) -> None:
+    """Zeigt nur Metadaten. Den Inhalt kann der Betreiber nicht lesen (Ende-zu-Ende-verschlüsselt)."""
+    conn = _verbindung()
+    zeilen = conn.execute("SELECT k.benutzername, t.groesse, t.version, t.aktualisiert_am FROM tresore t "
+                          "JOIN konten k ON k.id = t.konto_id ORDER BY t.groesse DESC").fetchall()
+    for name, groesse, version, am in zeilen:
+        print(f"{name:<20} {groesse / 1024:>9.1f} KB  Version {version:<5} zuletzt {am[:16]}")
+    anzahl, summe = tresor.statistik(conn)
+    print(f"\n{anzahl} Tresor(e), zusammen {summe / 1024 / 1024:.2f} MB")
+
+
+def befehl_avv(_args) -> None:
+    conn = _verbindung()
+    aktuell = einstellungen.AVV_VERSION
+    zeilen = conn.execute("SELECT benutzername, nutzung, avv_version, avv_akzeptiert_am FROM konten ORDER BY id").fetchall()
+    for name, nutzung, version, am in zeilen:
+        status = "aktuell" if version == aktuell else ("veraltet" if version else "fehlt")
+        print(f"{name:<20} {nutzung or '-':<14} {version or '-':<10} {(am or '')[:10]:<10} {status}")
+    print(f"\nAktuelle Fassung: {aktuell}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Verwaltung der Follower-Auswertung (Web)")
     unter = parser.add_subparsers(dest="befehl", required=True)
@@ -90,6 +113,8 @@ def main() -> None:
     p = unter.add_parser("mailtest", help="Test-Mail schicken")
     p.add_argument("adresse")
     p.set_defaults(f=befehl_mailtest)
+    unter.add_parser("tresore", help="Größe und Stand der Tresore (ohne Inhalte)").set_defaults(f=befehl_tresore)
+    unter.add_parser("avv", help="Zustimmungen zum AV-Vertrag").set_defaults(f=befehl_avv)
     args = parser.parse_args()
     args.f(args)
 

@@ -29,6 +29,19 @@
                     Die E-Mail-Adresse brauchen wir für die Bestätigung und falls du dein Passwort vergisst.</p>
                 <label class="checkzeile"><input type="checkbox" name="zustimmung" value="1" required>
                     <span>Ich habe die <a href="{{ url_for('datenschutz') }}" target="_blank">Datenschutzhinweise</a> gelesen.</span></label>
+                {% if tresor_modus %}
+                    <fieldset class="nutzungsart">
+                        <legend>Wofür nutzt du die App?</legend>
+                        <label class="checkzeile"><input type="radio" name="nutzung" value="privat" required {% if request.form.get('nutzung') == 'privat' %}checked{% endif %}>
+                            <span>Privat – ich prüfe nur meinen eigenen, persönlichen Account.</span></label>
+                        <label class="checkzeile"><input type="radio" name="nutzung" value="geschaeftlich" {% if request.form.get('nutzung') == 'geschaeftlich' %}checked{% endif %}>
+                            <span>Geschäftlich – als Unternehmen, Influencer, Agentur oder für Kunden.</span></label>
+                    </fieldset>
+                    <label class="checkzeile"><input type="checkbox" name="avv" value="1" required>
+                        <span>Ich stimme dem <a href="{{ url_for('avv') }}" target="_blank">Auftragsverarbeitungsvertrag (AVV)</a> zu.
+                            Ich bleibe für die Listen, die ich speichere, selbst verantwortlich; der Betreiber speichert sie nur
+                            verschlüsselt in meinem Auftrag und kann sie nicht lesen.</span></label>
+                {% endif %}
                 {% if cfg.NEWSLETTER_ABFRAGEN %}
                     <label class="checkzeile"><input type="checkbox" name="newsletter" value="1">
                         <span>Freiwillig: Ich möchte gelegentlich Neuigkeiten zur App per E-Mail bekommen. Abbestellen jederzeit unter „Konto“.</span></label>

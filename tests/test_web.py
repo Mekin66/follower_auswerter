@@ -9,7 +9,9 @@ from core.instagram_checker import AccountStatus, PruefErgebnis
 
 
 def _app(tmp_path, **cfg):
+    """Die bisherigen Tests prüfen den klassischen Modus (Server wertet aus). Tresor-Tests: tests/test_tresor.py"""
     from web.app import create_app
+    cfg.setdefault("BETRIEBSMODUS", "klassisch")
     app = create_app(DATENBANK_PFAD=tmp_path / "web.sqlite3", SECRET_KEY="x", **cfg)
     app.config["TESTING"] = True
     return app

@@ -359,3 +359,18 @@ button:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow
 .marke-link img { border-radius: 7px; display: block; }
 .kommentar-text { margin: 0; padding: 16px 18px; background: #fafafa; border: 1px solid var(--rand); border-left: 4px solid var(--gelb);
     border-radius: 10px; font-size: 1.05rem; white-space: pre-wrap; word-break: break-word; }
+
+/* ---------------------------------------------------------------- Tresor-Modus */
+.hinweis.inline { margin: 0; display: inline; }
+.info.warnung { background: #fff3f0; border-color: #e0a090; }
+.flash li.fehler { color: #a3261b; }
+nav a.aktiv { text-decoration: underline; text-underline-offset: 4px; }
+.laedt::before { content: "⏳ "; }
+.filter-feld { max-width: 320px; margin: 6px 0 10px; }
+fieldset.nutzungsart { border: 1px solid #d8dde3; border-radius: 10px; padding: 8px 12px 4px; margin: 0 0 12px; }
+fieldset.nutzungsart legend { font-weight: 600; padding: 0 6px; }
+.avv-text h3 { margin-top: 18px; }
+.avv-text p, .avv-text li { line-height: 1.5; }
+.nutzung-aendern { display: inline; margin-left: 6px; }
+details summary { cursor: pointer; margin-top: 10px; }
+.speicher-status { font-size: 0.85em; color: #5b6570; text-align: right; margin: -6px 0 6px; min-height: 1em; }

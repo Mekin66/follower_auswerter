@@ -7,6 +7,26 @@
         <a class="knopf knopf-dezent" href="{{ url_for('konto_export') }}">⬇ Alle meine Daten herunterladen (JSON)</a>
     </div>
 
+    {% if tresor_modus %}
+    <div class="karte">
+        <h2>🔒 Tresor &amp; Auftragsverarbeitung</h2>
+        {% if tresor_info %}
+            <p>Verschlüsselter Tresor: {{ (tresor_info.groesse / 1024)|round(1) }} KB · Version {{ tresor_info.version }}
+               · zuletzt gespeichert {{ tresor_info.aktualisiert_am[:16]|replace('T', ' ') }}</p>
+        {% else %}
+            <p class="hinweis">Noch kein Tresor angelegt.</p>
+        {% endif %}
+        <p class="hinweis">Der Server kann den Inhalt nicht lesen. Öffnen, sichern oder löschen kannst du ihn in der App unter
+            <a href="{{ url_for('start') }}#tresor">Tresor</a>.</p>
+        {% if konto.avv_version == cfg.AVV_VERSION %}
+            <p>AV-Vertrag (Fassung {{ konto.avv_version }}) zugestimmt am {{ konto.avv_akzeptiert_am[:10] }}
+               · Nutzung: {{ nutzung_texte.get(konto.nutzung, 'nicht angegeben') }} · <a href="{{ url_for('avv') }}">Vertrag ansehen / Angabe ändern</a></p>
+        {% else %}
+            <p class="rot">Du hast der aktuellen Fassung des AV-Vertrags noch nicht zugestimmt. <a href="{{ url_for('avv') }}">Jetzt ansehen und zustimmen</a></p>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="karte">
         <h2>E-Mail-Adresse</h2>
         {% if konto.email %}
@@ -59,7 +79,7 @@
     <form class="karte gefahrzone" action="{{ url_for('konto_loeschen') }}" method="post" onsubmit="return confirm('Konto und alle Daten endgültig löschen?')">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <h2>Konto löschen</h2>
-        <p class="hinweis" style="margin-top:-6px">Löscht dein Konto und alle Auswertungen, Markierungen und Listen endgültig.</p>
+        <p class="hinweis" style="margin-top:-6px">Löscht dein Konto und alle Auswertungen, Markierungen und Listen{% if tresor_modus %} (samt Tresor){% endif %} endgültig.</p>
         <label>Passwort zur Bestätigung <input type="password" name="passwort" autocomplete="current-password" required></label>
         <button type="submit" class="knopf-rot">Konto endgültig löschen</button>
     </form>

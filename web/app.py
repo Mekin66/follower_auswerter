@@ -14,6 +14,13 @@ Auf einem Server (siehe docs/VEROEFFENTLICHEN.md):
     Hintergrund-Prüfungen liegen im Arbeitsspeicher dieses Prozesses.)
 
 Konto-Funktion an/aus: web/einstellungen.py -> ACCOUNTS_AKTIVIERT
+
+Zwei Betriebsmodi (web/einstellungen.py -> BETRIEBSMODUS):
+- "tresor" (Standard): Der Server ist reiner, "blinder" Speicher. Die Startseite
+  lädt die Browser-App aus web/static/tresor/, die Exporte im Browser liest,
+  auswertet und verschlüsselt im Tresor ablegt (Routen unter /api/tresor).
+  Die klassischen Auswertungs-Routen (/laden, /ergebnis, ...) sind abgeschaltet.
+- "klassisch": Der Server liest und speichert die Listen selbst (bis Version 4).
 """
 
 import datetime
@@ -50,11 +57,12 @@ from core.txt_format import lese_txt, schreibe_txt
 from core.removal_session import KATEGORIEN, EntfolgenAblauf, kategorien_ermitteln
 
 try:  # funktioniert sowohl als "python web/app.py" als auch als Paket "web.app"
-    from web import einstellungen as standard_einstellungen, konten, mail
+    from web import einstellungen as standard_einstellungen, konten, mail, tresor
 except ImportError:  # pragma: no cover
     import einstellungen as standard_einstellungen  # type: ignore
     import konten  # type: ignore
     import mail  # type: ignore
+    import tresor  # type: ignore
 
 
 # --------------------------------------------------------------------------
@@ -75,11 +83,31 @@ class PruefJob:
 
 MAX_ABLAEUFE_IM_SPEICHER = 500
 
+# Routen, in denen der SERVER Follower-Listen liest, auswertet oder speichert.
+# Im Tresor-Modus sind sie abgeschaltet (404) – dort erledigt das der Browser.
+KLASSISCHE_ENDPUNKTE = {
+    "laden", "import_uebersicht", "aktivitaet", "aktivitaet_start", "aktivitaet_durchgang",
+    "aktivitaet_entscheiden", "aktivitaet_liste", "aktivitaet_export", "aktivitaet_leeren", "editor",
+    "ergebnis", "freunde", "freunde_export", "verlauf", "verlauf_vergleichen", "snapshot_loeschen",
+    "entfolgen", "entfolgen_start", "entfolgen_neu", "entfolgen_automatisch", "entfolgen_vorschlaege",
+    "entfolgen_abbrechen", "entfolgen_ueberspringen", "entfolgen_entscheiden", "entfolgen_zurueck",
+    "entfolgen_export", "listen", "liste_hinzufuegen", "liste_entfernen", "liste_sammelaktion",
+    "markierungen_sammelaktion", "liste_export", "markierung_aendern", "plattform_wechseln",
+}
+
+# Content-Security-Policy für die Tresor-App: nur eigene Skripte, keine fremden Server.
+# Verhindert, dass eingeschleuster Code das Tresor-Passwort oder entschlüsselte Daten abgreift.
+TRESOR_CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+              "connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+
 
 def create_app(**ueberschreiben) -> Flask:
     """App-Factory. `ueberschreiben` erlaubt Tests, Einstellungen zu ändern (z. B. ACCOUNTS_AKTIVIERT=True)."""
     cfg = {name: getattr(standard_einstellungen, name) for name in dir(standard_einstellungen) if name.isupper()}
     cfg.update(ueberschreiben)
+    tresor_modus = cfg.get("BETRIEBSMODUS", "tresor") != "klassisch"
+    if tresor_modus:
+        cfg["AUTO_CHECK_AKTIVIERT"] = False      # der Server kennt im Tresor-Modus keine Nutzernamen
 
     app = Flask(__name__)
     app.config.update(
@@ -198,6 +226,7 @@ def create_app(**ueberschreiben) -> Flask:
             "cookie_modus": cookie_modus(),
             "cookie_banner_zeigen": cookie_modus() != "aus" and "cookie_wahl" not in session,
             "optionale_dienste_erlaubt": cookie_modus() == "einwilligung" and session.get("cookie_wahl") == "alle",
+            "tresor_modus": tresor_modus,
         }
 
     @app.before_request
@@ -207,8 +236,12 @@ def create_app(**ueberschreiben) -> Flask:
             if konten.konto_laden(db(), session["konto_id"]) is None:
                 session.pop("konto_id", None)
 
-        if request.method == "POST":
-            gesendet = request.form.get("_csrf", "")
+        if tresor_modus and request.endpoint in KLASSISCHE_ENDPUNKTE:
+            abort(404)
+
+        if request.method in ("POST", "PUT", "DELETE"):
+            # Formulare schicken das Token als Feld, die Tresor-App (fetch) als Header
+            gesendet = request.headers.get("X-CSRF-Token") or request.form.get("_csrf", "")
             if not gesendet or not secrets.compare_digest(gesendet, session.get("_csrf", "")):
                 abort(400, description="Sicherheits-Token fehlt oder ist abgelaufen. Bitte Seite neu laden.")
 
@@ -228,7 +261,92 @@ def create_app(**ueberschreiben) -> Flask:
     # ------------------------------------------------------------ Start & Laden
     @app.route("/")
     def start():
+        if tresor_modus:
+            antwort = app.make_response(render_template("tresor.html"))
+            antwort.headers["Content-Security-Policy"] = TRESOR_CSP
+            return antwort
         return render_template("index.html")
+
+    # ------------------------------------------------------------ Tresor (nur BETRIEBSMODUS "tresor")
+    # Der Server nimmt hier nur einen verschlüsselten Textblock entgegen und gibt ihn
+    # unverändert wieder heraus. Er öffnet ihn nicht und wertet nichts aus.
+    def _api_fehler(text: str, status: int, **extra):
+        antwort = app.response_class(json.dumps({"fehler": text, **extra}, ensure_ascii=False), status=status,
+                                     mimetype="application/json")
+        antwort.headers["Cache-Control"] = "no-store"
+        return antwort
+
+    def _api_json(daten: dict):
+        antwort = app.response_class(json.dumps(daten, ensure_ascii=False), mimetype="application/json")
+        antwort.headers["Cache-Control"] = "no-store"
+        return antwort
+
+    def _tresor_zugang(schreiben: bool = False):
+        """
+        None = alles in Ordnung, sonst eine fertige Fehler-Antwort.
+        Speichern nur mit Zustimmung zur AKTUELLEN AVV-Fassung; Herunterladen und
+        Löschen gehen immer (so steht es in § 12 des AVV).
+        """
+        if not tresor_modus or not cfg["ACCOUNTS_AKTIVIERT"]:
+            abort(404)
+        kid = konto_id()
+        if kid is None:
+            return _api_fehler("Bitte zuerst anmelden.", 401, grund="login")
+        if schreiben and not konten.avv_aktuell(db(), kid, cfg["AVV_VERSION"]):
+            return _api_fehler("Bitte zuerst dem Auftragsverarbeitungsvertrag zustimmen.", 403, grund="avv",
+                               link=url_for("avv"))
+        return None
+
+    @app.route("/api/tresor", methods=["GET"])
+    def tresor_laden():
+        if (fehler := _tresor_zugang()) is not None:
+            return fehler
+        daten = tresor.laden(db(), konto_id())
+        return _api_json({"vorhanden": daten is not None, **(daten or {"version": 0}),
+                          "avv_aktuell": konten.avv_aktuell(db(), konto_id(), cfg["AVV_VERSION"]),
+                          "avv_link": url_for("avv"), "max_kb": cfg["TRESOR_MAX_KB"]})
+
+    @app.route("/api/tresor", methods=["PUT"])
+    def tresor_speichern():
+        if (fehler := _tresor_zugang(schreiben=True)) is not None:
+            return fehler
+        anfrage = request.get_json(silent=True) or {}
+        try:
+            version = tresor.speichern(db(), konto_id(), anfrage.get("inhalt"), anfrage.get("basis_version"),
+                                       cfg["TRESOR_MAX_KB"])
+        except tresor.VersionsKonflikt as e:
+            return _api_fehler(str(e), 409, grund="konflikt", version=e.aktuelle_version)
+        except tresor.TresorFehler as e:
+            return _api_fehler(str(e), 400, grund="format")
+        return _api_json({"version": version, "aktualisiert_am": tresor.info(db(), konto_id())["aktualisiert_am"]})
+
+    @app.route("/api/tresor", methods=["DELETE"])
+    def tresor_loeschen():
+        if (fehler := _tresor_zugang()) is not None:
+            return fehler
+        tresor.loeschen(db(), konto_id())
+        return _api_json({"geloescht": True})
+
+    @app.route("/avv", methods=["GET", "POST"])
+    def avv():
+        """Auftragsverarbeitungsvertrag anzeigen – und (angemeldet) zustimmen."""
+        kid = konto_id()
+        if request.method == "POST":
+            if kid is None:
+                return redirect(url_for("anmelden"))
+            if not request.form.get("avv"):
+                flash("Bitte setze das Häkchen, um dem Vertrag zuzustimmen.")
+                return redirect(url_for("avv"))
+            try:
+                konten.avv_zustimmen(db(), kid, cfg["AVV_VERSION"], request.form.get("nutzung", ""))
+            except konten.KontoFehler as e:
+                flash(str(e))
+                return redirect(url_for("avv"))
+            flash("Danke – deine Zustimmung ist gespeichert. Du kannst den Tresor jetzt nutzen.")
+            return redirect(url_for("start"))
+        info = konten.konto_info(db(), kid) if kid is not None else None
+        return render_template("avv.html", konto=info, nutzung_texte=konten.NUTZUNG_TEXTE,
+                               zugestimmt=bool(info and info["avv_version"] == cfg["AVV_VERSION"]))
 
     @app.route("/plattform", methods=["POST"])
     def plattform_wechseln():
@@ -904,6 +1022,9 @@ def create_app(**ueberschreiben) -> Flask:
             if not request.form.get("zustimmung"):
                 flash("Bitte bestätige, dass du die Datenschutzhinweise gelesen hast.")
                 return render_template("konto_formular.html", modus="registrieren")
+            if tresor_modus and not request.form.get("avv"):
+                flash("Bitte stimme dem Auftragsverarbeitungsvertrag zu – ohne ihn dürfen wir deine Listen nicht speichern.")
+                return render_template("konto_formular.html", modus="registrieren")
             if _zu_viele_fehlversuche():
                 flash("Zu viele Versuche. Bitte in 15 Minuten erneut versuchen.")
                 return render_template("konto_formular.html", modus="registrieren"), 429
@@ -914,7 +1035,9 @@ def create_app(**ueberschreiben) -> Flask:
                     db(), request.form.get("benutzername", ""), request.form.get("passwort", ""),
                     request.form.get("passwort2", ""), email=email_eingabe,
                     email_pflicht=cfg["E_MAIL_PFLICHT"] or bestaetigen, freigeschaltet=not bestaetigen,
-                    newsletter=cfg["NEWSLETTER_ABFRAGEN"] and bool(request.form.get("newsletter")))
+                    newsletter=cfg["NEWSLETTER_ABFRAGEN"] and bool(request.form.get("newsletter")),
+                    nutzung=request.form.get("nutzung", "") if tresor_modus else None,
+                    avv_version=cfg["AVV_VERSION"] if tresor_modus else None)
             except konten.EmailVergeben:
                 _fehlversuch_merken()                                   # bremst massenhaftes Durchprobieren
                 _schon_registriert_mail(konten.email_normalisieren(email_eingabe))
@@ -1061,7 +1184,8 @@ def create_app(**ueberschreiben) -> Flask:
                 flash(str(e))
             return redirect(url_for("konto"))
         return render_template("konto.html", konto=konten.konto_info(db(), kid),
-                               anzahl_snapshots=len(history_store.snapshots_auflisten(db(), besitzer())))
+                               anzahl_snapshots=len(history_store.snapshots_auflisten(db(), besitzer())),
+                               tresor_info=tresor.info(db(), kid), nutzung_texte=konten.NUTZUNG_TEXTE)
 
     @app.route("/konto/loeschen", methods=["POST"])
     def konto_loeschen():
@@ -1087,6 +1211,12 @@ def create_app(**ueberschreiben) -> Flask:
         conn = db()
         info = konten.konto_info(conn, konto_id())
         daten = {"konto": info}
+        if tresor_modus:
+            # Der Server kann den Tresor nicht entschlüsseln. Den Klartext gibt es in der
+            # Browser-App unter "Tresor > Klartext-Export".
+            daten["tresor_verschluesselt"] = tresor.laden(conn, konto_id())
+            return Response(json.dumps(daten, ensure_ascii=False, indent=2), mimetype="application/json",
+                            headers={"Content-Disposition": "attachment; filename=meine_daten.json"})
         for pl in Plattform:
             wer = bereich(basis_besitzer(), pl)
             daten[pl.value] = {

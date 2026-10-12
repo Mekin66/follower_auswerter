@@ -13,6 +13,23 @@
            E-Mail: {{ cfg.BETREIBER_EMAIL or '[E-Mail]' }}</p>
 
         <h3>2. Welche Daten verarbeitet werden und wozu</h3>
+        {% if tresor_modus %}
+        <p><b>Auswertung nur in deinem Browser.</b> Wenn du einen Instagram- oder TikTok-Export oder eine eigene Liste
+           auswählst, wird die Datei <b>nicht hochgeladen</b>. Das Programm, das sie liest und auswertet, läuft in deinem
+           Browser. Ohne Konto bleiben die Daten nur im geöffneten Browser-Tab und sind beim Schließen weg (es sei denn,
+           du speicherst selbst eine Sicherungsdatei).</p>
+        {% if accounts_aktiviert %}
+        <p><b>Verschlüsselter Tresor (Auftragsverarbeitung).</b> Mit Konto kannst du deine Listen dauerhaft speichern.
+           Dein Browser verschlüsselt sie vorher mit deinem Tresor-Passwort (AES-256-GCM); dieses Passwort wird nie an uns
+           übertragen. Wir speichern nur den verschlüsselten Block und können ihn nicht lesen. Für diese Daten bist du
+           selbst verantwortlich, wir verarbeiten sie nur in deinem Auftrag nach dem
+           <a href="{{ url_for('avv') }}">Vertrag zur Auftragsverarbeitung</a> (Art. 28 DSGVO). Nutzt du die App rein
+           privat, gilt für dich die Haushaltsausnahme (Art. 2 Abs. 2 lit. c DSGVO).
+           Wir speichern zusätzlich, wann du dem Vertrag zugestimmt hast (Fassung, Zeitpunkt) und ob du die App privat oder
+           geschäftlich nutzt (Nachweis nach Art. 5 Abs. 2 und Art. 28 DSGVO; Rechtsgrundlage Art. 6 Abs. 1 lit. b und c
+           DSGVO), sowie Größe und Zeitpunkt der letzten Speicherung des Tresors.</p>
+        {% endif %}
+        {% else %}
         <p><b>Hochgeladene Exporte und Listen.</b> Aus einem Instagram- oder TikTok-Datenexport bzw. einer selbst erstellten
            Liste werden nur Nutzernamen und das Datum der Verbindung gelesen (Follower, gefolgte Accounts
            {% if accounts_aktiviert %}und – bei angemeldeten Nutzern – blockierte Profile und „Enge Freunde“{% endif %}).
@@ -28,6 +45,7 @@
            ausschließlich dir angezeigt, nicht veröffentlicht, nicht mit anderen Daten verknüpft und nach den unten
            genannten Fristen gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse, die eigenen
            Verbindungen auszuwerten).</p>
+        {% endif %}
         {% if accounts_aktiviert %}
         <p><b>Benutzerkonto.</b> Benutzername, E-Mail-Adresse, Passwort (nur als Hash, nie im Klartext), Zeitpunkt der
            Registrierung, der E-Mail-Bestätigung und der letzten Anmeldung, dazu deine Auswertungen, Markierungen und Listen.
@@ -51,7 +69,13 @@
 
         <h3>3. Speicherdauer</h3>
         <ul>
+            {% if tresor_modus %}
+            <li>Ohne Konto: Es wird nichts auf dem Server gespeichert.</li>
+            {% if accounts_aktiviert %}<li>Tresor: bis du ihn oder dein Konto löschst; aus Datensicherungen verschwindet er
+                spätestens {{ cfg.BACKUP_LOESCHFRIST_TAGE }} Tage danach.</li>{% endif %}
+            {% else %}
             <li>Ohne Konto: automatische Löschung nach spätestens {{ aufbewahrung_stunden|int }} Stunden.</li>
+            {% endif %}
             {% if accounts_aktiviert %}
             <li>Mit Konto: bis du Daten oder dein Konto löschst (unter „Mein Konto“ jederzeit möglich).
                 {% if cfg.KONTO_LOESCHEN_NACH_TAGEN %}Konten ohne Anmeldung seit {{ cfg.KONTO_LOESCHEN_NACH_TAGEN }} Tagen werden
