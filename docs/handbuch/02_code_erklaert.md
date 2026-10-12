@@ -318,6 +318,22 @@ Wer einen Parser ändert, sieht so sofort, wenn der andere abweicht.
 Das Tresor-Datenmodell steht oben in `auswertung.js`; `normalisieren()` ist die „Migration“
 für ältere Tresore (fehlende Teile ergänzen) – das Gegenstück zu `init_db()` auf dem Server.
 
+### `netz.js` und `aktivitaet.js` – Kommentar- und Like-Modus im Browser
+
+- `netz.js` rechnet **dasselbe Netz** wie `core/kommentar_netz.py` mit denselben Gewichten
+  (geladen von `/netz/kommentar_netz.json`). Damit die Zahlen exakt gleich sind, wird jeder Schritt
+  1:1 nachgebaut: `normalize("NFKC")`, `casefold` (toLowerCase + ß→ss), `\w` als
+  `[\p{L}\p{N}_]`, CRC32 über die UTF-8-Bytes, Zählung in Unicode-Codepunkten (`Array.from`),
+  gleiche Summen-Reihenfolge (`Map` statt Objekt). Der Paritätstest in `tests/test_js.py` vergleicht
+  die Wahrscheinlichkeiten mit Python (Abweichung < 1e-9).
+- `netz.angepasst()` trainiert im Browser mit den eigenen Entscheidungen nach – wie in Python.
+- `parser.js` liest Kommentare und Likes (JSON **und** HTML; der HTML-Leser ist ein kleiner
+  Tokenizer, Port von `_ExportHTML`). Die IDs entstehen wie in Python (SHA-1 von `zeit|owner|text`),
+  damit ein Kommentar überall dieselbe ID hat.
+- `aktivitaet.js`: `AktivitaetAblauf.fuerKommentare/fuerLikes`, `alleZumEntfernen`,
+  `likeStatistik`, `aktivitaetBericht` – Ports von `core/aktivitaet.py` und `core/export.py`.
+- Die Daten liegen im Tresor unter `plattformen.instagram.aktivitaet`.
+
 ### `speicher.js`
 
 Klasse `TresorSpeicher`: `abrufen()`, `anlegen()`, `entsperren()`, `speichern()`,

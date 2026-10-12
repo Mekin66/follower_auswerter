@@ -9,7 +9,9 @@
 // Inhalte aus Exportdateien keinen Code einschleusen können (XSS).
 
 import * as A from "./auswertung.js";
-import { ExportFormatFehler, ladeExport, ladeListe, leseTxt, schreibeTxt, usernamesAusText } from "./parser.js";
+import * as AK from "./aktivitaet.js";
+import { beispieleLesen, bewerte, KommentarNetz, KRITISCH, PRUEFEN, HARMLOS } from "./netz.js";
+import { ExportFormatFehler, hatFollowerDaten, ladeExport, ladeListe, leseTxt, schreibeTxt, usernamesAusText } from "./parser.js";
 import { FalschesPasswort } from "./krypto.js";
 import { ApiFehler, TresorSpeicher } from "./speicher.js";
 
@@ -137,7 +139,7 @@ async function mitLadeanzeige(text, aufgabe) {
 
 // ================================================================ Ansicht: Laden
 function ansichtLaden() {
-  const exportFeld = el("input", { type: "file", accept: ".zip,.json" });
+  const exportFeld = el("input", { type: "file", accept: ".zip,.json,.html" });
   const followerFeld = el("input", { type: "file", accept: ".json,.html,.txt" });
   const followingFeld = el("input", { type: "file", accept: ".json,.html,.txt" });
   const letzter = A.neuester(bereich());
@@ -153,7 +155,7 @@ function ansichtLaden() {
       plattformSetzen(inhalt.plattform);
       meldung(`${A.PLATTFORMEN[inhalt.plattform]}-Export erkannt – umgestellt auf ${A.PLATTFORMEN[inhalt.plattform]}.`);
     }
-    auswertungAnlegen(inhalt.follower, inhalt.following, null, inhalt.blockiert, inhalt.enge_freunde);
+    exportUebernehmen(inhalt);
   });
 
   const listenLaden = () => mitLadeanzeige("Listen werden gelesen …", async () => {
@@ -189,8 +191,9 @@ function ansichtLaden() {
     hinweis("Neu hier? ", el("a", { class: "hilfe-link", href: `${seite.anleitungUrl}/${zustand.plattform}-export`,
                                     text: "So bekommst du die Export-Datei (2 Minuten)" })),
     karte(el("h2", { text: "📦 Export-Datei auswerten" }),
-          hinweis("Die ZIP-Datei von Instagram oder TikTok – nicht entpacken. Das Programm erkennt automatisch, was drin ist."),
-          el("label", {}, "Export-Datei (.zip oder TikTok-.json)", exportFeld),
+          hinweis("Die ZIP-Datei von Instagram oder TikTok – nicht entpacken. Das Programm erkennt automatisch, was drin ist: " +
+                  "Follower/Following, Kommentare, Likes (JSON oder HTML). Einzelne Kommentar-/Like-Dateien gehen auch."),
+          el("label", {}, "Export-Datei (.zip, .json oder .html)", exportFeld),
           knopf("Auswerten", exportLaden)),
     karte(el("h2", { text: "📄 Einzelne Listen (JSON, HTML oder TXT)" }),
           el("label", {}, "Follower – wer dir folgt", followerFeld),
@@ -212,6 +215,21 @@ function ansichtLaden() {
           el("label", {}, "Name der Auswertung (freiwillig)", editorName),
           knopf("Auswerten", editorAuswerten, "knopf-gruen")),
   ];
+}
+
+/** Ein ganzer Export: Follower-Listen als Auswertung, Kommentare/Likes in den Kommentar-/Like-Modus. */
+function exportUebernehmen(inhalt) {
+  const b = bereich();
+  const [neuK, neuL] = AK.importieren(b.aktivitaet, inhalt.kommentare || [], inhalt.likes || []);
+  if ((inhalt.kommentare || []).length || (inhalt.likes || []).length) {
+    meldung(`Aus dem Export übernommen: ${neuK} neue Kommentare, ${neuL} neue Likes ` +
+            `(Kommentar- und Like-Modus im Menü).`);
+  }
+  if (hatFollowerDaten(inhalt)) {
+    return auswertungAnlegen(inhalt.follower, inhalt.following, null, inhalt.blockiert, inhalt.enge_freunde);
+  }
+  wechseln(inhalt.kommentare?.length ? "kommentare" : "likes");
+  geaendert();
 }
 
 function auswertungAnlegen(follower, following, label = null, blockiert = {}, engeFreunde = {}) {
@@ -486,6 +504,182 @@ function ansichtListen() {
   ];
 }
 
+// ================================================================ Ansicht: Kommentare & Likes
+// Das neuronale Netz (netz.js) läuft hier im Browser. Gewichte und Grund-Beispiele kommen als
+// statische Dateien vom Server (/netz/...), die Kommentare selbst verlassen den Browser nie.
+const netzZustand = { netz: null, beispiele: null, laedt: false, fehler: "" };
+
+function netzLaden() {
+  if (netzZustand.netz || netzZustand.laedt) return netzZustand.netz;
+  netzZustand.laedt = true;
+  Promise.all([fetch("/netz/kommentar_netz.json").then((r) => r.json()),
+               fetch("/netz/kommentar_beispiele.tsv").then((r) => r.text())])
+    .then(([gewichte, tsv]) => {
+      netzZustand.netz = new KommentarNetz(gewichte);
+      netzZustand.beispiele = beispieleLesen(tsv);
+    })
+    .catch((e) => { netzZustand.fehler = `Das Bewertungs-Netz konnte nicht geladen werden (${e.message}).`; })
+    .finally(() => { netzZustand.laedt = false; zeichnen(); });
+  return null;
+}
+
+/** Ab 5 eigenen Entscheidungen: Netz mit diesen nachtrainieren (nur im Speicher). */
+function persoenlichesNetz(aktivitaet) {
+  const eigene = AK.eigeneBeispiele(aktivitaet);
+  if (eigene.length < AK.MIN_EIGENE_ENTSCHEIDUNGEN) return netzZustand.netz;
+  return netzZustand.netz.angepasst(eigene, netzZustand.beispiele);
+}
+
+const STUFEN_BADGE = { [KRITISCH]: "badge-rot", [PRUEFEN]: "badge-gelb", [HARMLOS]: "badge-gruen" };
+
+/** Kommentartext mit gelb markierten Treffer-Wörtern – ohne innerHTML. */
+function markierterText(text, treffer) {
+  if (!treffer.length) return el("blockquote", { class: "kommentar-text", text });
+  const muster = new RegExp(`(${treffer.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "giu");
+  return el("blockquote", { class: "kommentar-text" },
+            text.split(muster).map((teil, i) => (i % 2 ? el("mark", { text: teil }) : teil)));
+}
+
+function aktivitaetsAnsicht(art) {
+  const ak = bereich().aktivitaet;
+  const istK = art === AK.KOMMENTAR;
+  const name = istK ? "kommentare" : "likes";
+  const titel = istK ? "💬 Kommentar-Modus" : "❤️ Like-Modus";
+  const eintraege = Object.values(istK ? ak.kommentare : ak.likes);
+  const z = (zustand.akt ??= {});
+  const lauf = z[art];
+
+  if (zustand.plattform !== "instagram") {
+    return [el("h1", { text: titel }), karte(el("p", { text: "Kommentare und Likes gibt es nur für Instagram." }),
+            knopf("Zu Instagram wechseln", () => { plattformSetzen("instagram"); zeichnen(); }))];
+  }
+  if (!eintraege.length) {
+    return [el("h1", { text: titel }), karte(
+      el("p", { text: `Noch keine ${istK ? "Kommentare" : "Likes"} geladen.` }),
+      hinweis(`Fordere bei Instagram einen Export an, der „${istK ? "Kommentare" : "Likes"}“ enthält, und lade ihn unter „Laden“ – ` +
+              "das Programm erkennt ihn automatisch (JSON oder HTML)."),
+      el("a", { class: "knopf", href: "#laden", text: "Daten laden" }))];
+  }
+
+  // ---- Liste "Zum Entfernen"
+  if (lauf?.modus === "liste") {
+    const liste = AK.alleZumEntfernen(ak, art);
+    return [el("h1", { text: titel }), karte(
+      el("h2", { text: `${liste.length} zum Entfernen markiert` }),
+      hinweis("Das Programm löscht nichts selbst. Öffne die Einträge über die Links oder gesammelt auf der ",
+              el("a", { href: AK.AKTIVITAET_URL[art], target: "_blank", rel: "noopener noreferrer", text: "Instagram-Aktivitätsseite" }),
+              " (App: Profil → Menü → Deine Aktivität → Interaktionen)."),
+      el("ul", { class: "liste" }, liste.map((e) => el("li", { "data-initiale": istK ? "💬" : "❤" },
+        el("span", {}, el("b", { text: e.datum }), istK ? ` · bei @${e.medien_owner || "?"}` : ` · ${e.art} von @${e.owner || "?"}`,
+           istK && el("br"), istK && el("span", { class: "hinweis inline", text: `„${e.text.slice(0, 160)}${e.text.length > 160 ? "…" : ""}“` })),
+        AK.suchLink(e) && el("span", { class: "rechts" }, el("a", { class: "knopf knopf-dezent klein", href: AK.suchLink(e),
+                                                                    target: "_blank", rel: "noopener noreferrer", text: "Öffnen" }))))),
+      el("p", {},
+         knopf("⬇ Als Textdatei", () => herunterladen(AK.aktivitaetBericht(art, liste), `${name}_zum_entfernen.txt`)), " ",
+         knopf("Zur Übersicht", () => { z[art] = null; zeichnen(); }, "knopf-dezent")))];
+  }
+
+  // ---- Durchgang
+  if (lauf?.modus === "durchgang") {
+    const a = lauf.ablauf;
+    const e = a.aktueller();
+    if (!e) { z[art] = { modus: "liste" }; return aktivitaetsAnsicht(art); }
+    const [erledigt, gesamt] = a.fortschritt();
+    const b = a.bewertung(e);
+    const entscheiden = (wert) => { a.entscheide(wert); geaendert(); };
+    return [el("h1", { text: titel }), el("div", { class: "karte" },
+      el("p", { class: "wizard-fortschritt", text: `${erledigt} von ${gesamt} bearbeitet` }),
+      el("div", { class: "wizard-fortschrittsbalken" }, el("div", { style: `width:${Math.round(100 * erledigt / gesamt)}%` })),
+      istK ? [
+        el("p", {}, el("span", { class: `badge ${STUFEN_BADGE[b.stufe]}`, text: `${b.stufe} · ${b.empfehlung}` }),
+           el("span", { class: "hinweis inline", text: `  ${e.datum} · ${e.quelle} von @${e.medien_owner || "?"}` })),
+        hinweis(`Warum: ${b.gruende.join("; ")}`),
+        markierterText(e.text, b.treffer),
+      ] : [
+        el("div", { class: "wizard-name", text: `@${e.owner || "?"}` }),
+        el("p", { class: "wizard-seit", text: `${e.art} geliked am ${e.datum}` }),
+      ],
+      el("p", {},
+         AK.suchLink(e) && el("a", { class: "hilfe-link", href: AK.suchLink(e), target: "_blank", rel: "noopener noreferrer", text: `🔗 ${AK.suchLink(e)}` }),
+         " · ", el("a", { class: "hilfe-link", href: AK.AKTIVITAET_URL[art], target: "_blank", rel: "noopener noreferrer", text: "Instagram-Aktivitätsseite" }),
+         istK && [" · ", knopf("Text kopieren", () => navigator.clipboard?.writeText(e.text), "knopf-dezent klein")]),
+      el("p", { style: "text-align:center" },
+         knopf(istK ? "🗑 Löschen" : "💔 Like entfernen", () => entscheiden(AK.ENTFERNEN), "knopf-rot"), " ",
+         knopf("✓ Behalten", () => entscheiden(AK.BEHALTEN), "knopf-gruen"), el("br"),
+         knopf("← Zurück", () => { a.zurueck(); geaendert(); }, "knopf-dezent", { disabled: !a.kannZurueck() }), " ",
+         knopf("Beenden", () => { z[art] = { modus: "liste" }; zeichnen(); }, "knopf-dezent")))];
+  }
+
+  // ---- Übersicht / Start
+  const erneut = el("input", { type: "checkbox" });
+  const entschieden = Object.keys(ak.entscheidungen[art]).length;
+  const zuEntfernen = AK.alleZumEntfernen(ak, art).length;
+  const unten = [
+    el("label", { class: "checkzeile" }, erneut, el("span", { text: "Schon entschiedene erneut zeigen" })),
+  ];
+  const listeKnopf = knopf(`Liste „Zum Entfernen“ (${zuEntfernen})`, () => { z[art] = { modus: "liste" }; zeichnen(); }, "knopf-dezent");
+  const leeren = knopf(`Geladene ${istK ? "Kommentare" : "Likes"} löschen`, () => {
+    if (!confirm("Alle geladenen Daten und Entscheidungen hier löschen?")) return;
+    if (istK) { ak.kommentare = {}; ak.entscheidungen[AK.KOMMENTAR] = {}; } else { ak.likes = {}; ak.entscheidungen[AK.LIKE] = {}; }
+    z[art] = null;
+    geaendert();
+  }, "knopf-dezent klein");
+  const starten = (ablauf) => {
+    if (!ablauf.reihenfolge.length) { meldung("Mit dieser Auswahl gibt es keine offenen Einträge."); return zeichnen(); }
+    z[art] = { modus: "durchgang", ablauf };
+    zeichnen();
+  };
+
+  if (!istK) {
+    const top = AK.likeStatistik(eintraege).slice(0, 50);
+    return [el("h1", { text: titel }), karte(
+      el("h2", { text: `${eintraege.length} Likes – wem du am meisten Likes gibst` }),
+      el("div", { class: "tabelle-scroll" }, el("table", { class: "tabelle" },
+        el("tr", {}, el("th", { text: "Account" }), el("th", { text: "Likes" }), el("th", { text: "letzter Like" }), el("th")),
+        top.map(([konto, n, letzter]) => el("tr", {},
+          el("td", {}, konto === "(unbekannt)" ? konto : profilLink(konto)), el("td", {}, el("b", { text: n })), el("td", { text: letzter }),
+          el("td", {}, knopf("nur diese durchgehen", () => starten(AK.AktivitaetAblauf.fuerLikes(ak, konto, erneut.checked)), "knopf-dezent klein")))))),
+      unten,
+      el("p", {}, knopf("Alle Likes durchgehen", () => starten(AK.AktivitaetAblauf.fuerLikes(ak, null, erneut.checked))), " ", listeKnopf),
+      hinweis(`${entschieden} schon entschieden.`)), leeren];
+  }
+
+  const netz = netzLaden();
+  if (netzZustand.fehler) return [el("h1", { text: titel }), karte(el("p", { class: "rot", text: netzZustand.fehler }))];
+  if (!netz) return [el("h1", { text: titel }), karte(el("p", { class: "laedt", text: "Bewertungs-Netz wird geladen …" }))];
+  if (zustand.kommentarStatistik?.anzahl !== eintraege.length) {     // nur neu rechnen, wenn sich etwas geändert hat
+    zustand.kommentarStatistik = { anzahl: eintraege.length, stat: AK.kommentarStatistik(eintraege, netz) };
+  }
+  const stat = zustand.kommentarStatistik.stat;
+  let filter = AK.FILTER_RISKANT;
+  const radio = (wert, text, klein) => el("label", { class: "checkzeile" },
+    el("input", { type: "radio", name: "filter", value: wert, checked: wert === filter, onchange: () => { filter = wert; } }),
+    el("span", {}, text, klein && el("small", { text: ` ${klein}` })));
+  return [
+    el("h1", { text: titel }),
+    el("div", { class: "kacheln" },
+       [[stat[KRITISCH], "kritisch – Löschen empfohlen", "wert rot"], [stat[PRUEFEN], "prüfen", "wert"],
+        [stat[HARMLOS], "harmlos", "wert gruen"], [entschieden, "schon entschieden", "wert"]].map(([wert, t, k]) =>
+         el("div", { class: "kachel" }, el("div", { class: k, text: wert }), el("div", { class: "titel", text: t })))),
+    karte(
+      el("h2", { text: `${eintraege.length} eigene Kommentare durchgehen` }),
+      hinweis("Die Einstufung macht ein kleines neuronales Netz direkt in deinem Browser – die Kommentare verlassen dein Gerät nicht. " +
+              `Ab ${AK.MIN_EIGENE_ENTSCHEIDUNGEN} eigenen Entscheidungen lernt es dazu und sortiert ähnliche Kommentare so ein wie du. ` +
+              "Es nennt die Wörter, die den Ausschlag gegeben haben. Ironie und Zusammenhang erkennt es nicht – du entscheidest selbst."),
+      radio(AK.FILTER_KRITISCH, "Nur kritische (Löschen empfohlen)"),
+      radio(AK.FILTER_RISKANT, "Kritische + zu prüfende", "empfohlen – heikelste zuerst"),
+      radio(AK.FILTER_ALLE, "Alle Kommentare nacheinander"),
+      unten,
+      el("p", {}, knopf("Start", () => mitLadeanzeige("Netz lernt aus deinen Entscheidungen …", async () => {
+        starten(AK.AktivitaetAblauf.fuerKommentare(ak, persoenlichesNetz(ak), filter, erneut.checked));
+      })), " ", listeKnopf)),
+    leeren,
+  ];
+}
+
+const ansichtKommentare = () => aktivitaetsAnsicht(AK.KOMMENTAR);
+const ansichtLikes = () => aktivitaetsAnsicht(AK.LIKE);
+
 // ================================================================ Ansicht: Tresor
 function passwortFelder(mitWiederholung) {
   const p1 = el("input", { type: "password", autocomplete: mitWiederholung ? "new-password" : "current-password", required: true });
@@ -652,11 +846,13 @@ function plattformSetzen(p) {
   zustand.snapshotId = null;
   zustand.vergleich = null;
   zustand.ablauf = null;
+  zustand.akt = null;
   merken("plattform", p);
   for (const b of document.querySelectorAll("#plattform-wahl button")) b.classList.toggle("aktiv", b.dataset.plattform === p);
 }
 
 const ANSICHTEN = { laden: ansichtLaden, ergebnis: ansichtErgebnis, verlauf: ansichtVerlauf, entfolgen: ansichtEntfolgen,
+                    kommentare: ansichtKommentare, likes: ansichtLikes,
                     listen: ansichtListen, tresor: ansichtTresor };
 
 function zeichnen() {

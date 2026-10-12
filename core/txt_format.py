@@ -38,7 +38,7 @@ def datum_lesen(text: str | None) -> str:
 
 def lese_txt(text: str) -> dict[str, str]:
     """Liest eine Textliste und gibt {nutzername: datum} zurück."""
-    text = (text or "").lstrip("﻿")          # Byte-Order-Mark von Windows-Editoren entfernen
+    text = (text or "").lstrip("\ufeff")          # Byte-Order-Mark von Windows-Editoren entfernen
     zeilen = text.splitlines()
 
     # TikTok-TXT-Export erkennen ("Username: ...")

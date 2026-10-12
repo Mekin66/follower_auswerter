@@ -18,6 +18,12 @@
            auswählst, wird die Datei <b>nicht hochgeladen</b>. Das Programm, das sie liest und auswertet, läuft in deinem
            Browser. Ohne Konto bleiben die Daten nur im geöffneten Browser-Tab und sind beim Schließen weg (es sei denn,
            du speicherst selbst eine Sicherungsdatei).</p>
+        <p><b>Kommentare und Likes.</b> Enthält dein Export deine eigenen Kommentare und Likes, liest der Browser
+           Kommentartext, Datum, den Nutzernamen des Beitrags-Inhabers und den Link zum Beitrag. Die Einstufung
+           „harmlos/prüfen/kritisch“ macht ein kleines neuronales Netz <b>in deinem Browser</b>; dafür lädt die Seite
+           nur die Gewichte des Netzes von unserem Server, deine Kommentare werden nicht übertragen. Das Netz lernt aus
+           deinen Entscheidungen (Entfernen/Behalten) – dieses angepasste Netz existiert nur im Arbeitsspeicher deines
+           Browsers. Es findet keine automatisierte Entscheidung mit Rechtswirkung statt – du entscheidest selbst.</p>
         {% if accounts_aktiviert %}
         <p><b>Verschlüsselter Tresor (Auftragsverarbeitung).</b> Mit Konto kannst du deine Listen dauerhaft speichern.
            Dein Browser verschlüsselt sie vorher mit deinem Tresor-Passwort (AES-256-GCM); dieses Passwort wird nie an uns

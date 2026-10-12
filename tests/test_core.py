@@ -192,7 +192,7 @@ def test_tiktok_pruefer_404():
 
 
 def test_txt_format_rundreise():
-    daten = lese_txt("﻿# Kommentar\nanna\n@Ben;2023-11-14\ncarl, dora\nhttps://www.tiktok.com/@eva\n")
+    daten = lese_txt("\ufeff# Kommentar\nanna\n@Ben;2023-11-14\ncarl, dora\nhttps://www.tiktok.com/@eva\n")
     assert daten == {"anna": "Unbekannt", "ben": "14.11.2023", "carl": "Unbekannt", "dora": "Unbekannt", "eva": "Unbekannt"}
     assert lese_txt(schreibe_txt(daten, "Test")) == daten
     tiktok_txt = "Date: 2024-01-05 18:22:10\nUsername: Tina\n\nDate: 2024-02-01 09:00:00\nUsername: tom\n"

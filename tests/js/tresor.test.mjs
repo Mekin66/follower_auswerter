@@ -105,3 +105,81 @@ test("ZIP-Export lesen (Testdatei aus pytest)", { skip: !process.env.FA_TEST_ZIP
   assert.deepEqual(inhalt.blockiert, erwartet.blockiert);
   assert.deepEqual(inhalt.enge_freunde, erwartet.enge_freunde);
 });
+
+// ------------------------------------------------------------------ Kommentar-Netz und Kommentar-Modus
+import * as N from "../../web/static/tresor/netz.js";
+import * as AK from "../../web/static/tresor/aktivitaet.js";
+
+const gewichte = JSON.parse(await readFile(new URL("../../core/daten/kommentar_netz.json", import.meta.url), "utf-8"));
+const netz = new N.KommentarNetz(gewichte);
+
+test("Netz: Unicode-Merkmale wie in Python", () => {
+  assert.deepEqual(N.woerter("𝐈𝐝𝐢𝐨𝐭!! Du bist sooooo DUMM 😂"), ["idiot", "du", "bist", "soo", "dumm"]);
+  assert.deepEqual(N.woerter("GROẞ Straße"), ["gross", "strasse"]);
+  assert.deepEqual(N.woerter("Ты идиот"), ["ты", "идиот"]);
+  assert.equal(N.crc32("w:idiot"), 0x0 + N.crc32("w:idiot"));
+  assert.equal(N.crc32("abc"), 0x352441c2);                     // bekannter CRC32-Wert
+  assert.ok(N.istEmoji("😍") && !N.istEmoji("a"));
+});
+
+test("Netz: gleiche Wahrscheinlichkeiten wie Python", { skip: !process.env.FA_TEST_NETZ }, () => {
+  const erwartet = JSON.parse(process.env.FA_TEST_NETZ);
+  for (const { text, p, top } of erwartet) {
+    const js = netz.wahrscheinlichkeiten(text);
+    for (const k of N.KLASSEN) assert.ok(Math.abs(js[k] - p[k]) < 1e-9, `${text}: ${k} ${js[k]} != ${p[k]}`);
+    if (top) assert.equal(netz.erklaeren(text)[0][0], top, text);
+  }
+});
+
+test("Netz: Bewertung mit Begründung", () => {
+  const b = N.bewerte("Was für ein dummer Trottel", netz);
+  assert.equal(b.stufe, N.KRITISCH);
+  assert.ok(b.treffer.includes("Trottel"));
+  assert.equal(N.bewerte("😍🔥", netz).stufe, N.HARMLOS);
+  assert.equal(N.bewerte("Was für ein dummer Trottel", netz, { erklaeren: false }).treffer.length, 0);
+});
+
+test("Netz lernt aus Entscheidungen (im Browser)", async () => {
+  const basis = N.beispieleLesen(await readFile(new URL("../../core/daten/kommentar_beispiele.tsv", import.meta.url), "utf-8"));
+  assert.ok(basis.length > 300);
+  const eigene = ["Bayern verliert eh wieder", "Dortmund ist so peinlich", "Schalke steigt ab haha",
+                  "Bayern-Fans sind alle gleich", "Dortmund kann nix", "Schalke ist ein Witz"].map((t) => [t, N.KRITISCH]);
+  const neu = "Bayern ist so peinlich, Schalke auch";
+  const vorher = N.KommentarNetz.risiko(netz.wahrscheinlichkeiten(neu));
+  const angepasst = netz.angepasst(eigene, basis);
+  assert.ok(N.KommentarNetz.risiko(angepasst.wahrscheinlichkeiten(neu)) > vorher + 0.1);
+  assert.equal(N.KommentarNetz.risiko(netz.wahrscheinlichkeiten(neu)), vorher, "Original bleibt unverändert");
+});
+
+test("Kommentar-Modus: Ablauf, Zurück, Liste, Likes", () => {
+  const ak = AK.leereAktivitaet();
+  const k = (id, text, zs) => ({ id, text, medien_owner: "ben", zeitstempel: zs, datum: "-", link: "", quelle: "Beitrag" });
+  AK.importieren(ak, [k("a", "Du bist so ein Idiot!!!", 2), k("b", "😍", 1), k("c", "Die Regierung hat versagt", 3)],
+                 [{ id: "l1", owner: "dora", zeitstempel: 5, datum: "x", link: "", art: "Beitrag" },
+                  { id: "l2", owner: "dora", zeitstempel: 6, datum: "y", link: "", art: "Beitrag" },
+                  { id: "l3", owner: "eva", zeitstempel: 7, datum: "z", link: "", art: "Beitrag" }]);
+  assert.deepEqual(AK.importieren(ak, [k("a", "x", 1)], []), [0, 0]);          // kein Doppel-Import
+  const ablauf = AK.AktivitaetAblauf.fuerKommentare(ak, netz, AK.FILTER_RISKANT);
+  assert.equal(ablauf.reihenfolge[0], "a");                                    // heikelster zuerst
+  assert.ok(!ablauf.reihenfolge.includes("b"));                                // harmlos nicht im Filter
+  assert.ok(ablauf.bewertung(ablauf.aktueller()).erklaert);
+  ablauf.entscheide(AK.ENTFERNEN);
+  assert.equal(ak.entscheidungen.kommentar.a, AK.ENTFERNEN);
+  ablauf.zurueck();
+  assert.equal(ak.entscheidungen.kommentar.a, undefined);
+  ablauf.entscheide(AK.ENTFERNEN);
+  assert.deepEqual(AK.alleZumEntfernen(ak, AK.KOMMENTAR).map((e) => e.id), ["a"]);
+  assert.match(AK.aktivitaetBericht(AK.KOMMENTAR, AK.alleZumEntfernen(ak, AK.KOMMENTAR)), /Idiot/);
+  assert.deepEqual(AK.likeStatistik(Object.values(ak.likes))[0], ["dora", 2, "y"]);
+  assert.deepEqual(AK.AktivitaetAblauf.fuerLikes(ak, "dora").reihenfolge, ["l2", "l1"]);
+});
+
+test("Kommentare/Likes aus Export wie in Python", { skip: !process.env.FA_TEST_AKT_ZIP }, async () => {
+  const roh = await readFile(process.env.FA_TEST_AKT_ZIP);
+  const inhalt = await P.ladeExport(new File([roh], "export.zip"));
+  const erwartet = JSON.parse(process.env.FA_TEST_AKT_ERWARTET);
+  const sortiert = (l) => [...l].sort((a, b) => a.id.localeCompare(b.id));
+  assert.deepEqual(sortiert(inhalt.kommentare), sortiert(erwartet.kommentare));
+  assert.deepEqual(sortiert(inhalt.likes), sortiert(erwartet.likes));
+  assert.deepEqual(inhalt.follower, erwartet.follower);
+});

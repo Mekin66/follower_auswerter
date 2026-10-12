@@ -341,7 +341,10 @@ Ausführlich: [handbuch/04_tresor_und_recht.md](handbuch/04_tresor_und_recht.md)
   `parser.js`/`auswertung.js` (Ports von `core/`), `krypto.js` (PBKDF2 + AES-GCM), `speicher.js`, `app.js`.
 - Tests: `tests/test_tresor.py`; `tests/test_js.py` startet `tests/js/tresor.test.mjs` mit Node und prüft,
   dass JS- und Python-Parser denselben Export gleich lesen.
-- Nicht im Tresor-Modus: Kommentar-/Like-Modus und automatische Deaktiviert-Prüfung (Desktop/App haben sie weiter).
+- Nicht im Tresor-Modus: automatische Deaktiviert-Prüfung (Desktop/App haben sie weiter).
+- Kommentar-/Like-Modus im Tresor-Modus: `web/static/tresor/netz.js` (Netz, gleiche Gewichte wie Python,
+  Paritätstest), `aktivitaet.js` (Ablauf), Kommentar-/Like-Leser in `parser.js`; Route `/netz/<datei>` liefert
+  Gewichte und Beispiele. AVV § 3 nennt Kommentare/Likes (Fassung `2026-10b`).
 
 ### Kommentar-Bewertung per neuronalem Netz (Version 5)
 

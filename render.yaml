@@ -18,7 +18,7 @@ services:
       - key: ACCOUNTS_AKTIVIERT      # 1 = Konten + Tresor an (SMTP nötig), 0 = nur im Browser
         value: "0"
       - key: AVV_VERSION
-        value: "2026-10"
+        value: "2026-10b"
       - key: AUTO_CHECK_AKTIVIERT    # auf öffentlichen Servern besser aus
         value: "0"
       - key: COOKIES_NUR_HTTPS
